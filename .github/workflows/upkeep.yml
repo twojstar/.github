@@ -1,0 +1,87 @@
+---
+name: organization upkeep
+
+on: # yamllint disable-line rule:truthy
+  schedule:
+    - cron: "37 21 */2 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: organization-upkeep
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  upkeep:
+    name: Maintain organization PRs
+    runs-on: ubuntu-slim
+    timeout-minutes: 20
+    env:
+      GPTOMEK_APP_CLIENT_ID: ${{ vars.GPTOMEK_APP_CLIENT_ID }}
+      GPTOMEK_APP_PRIVATE_KEY: ${{ secrets.GPTOMEK_APP_PRIVATE_KEY }}
+    steps:
+      - name: Check GPTomek authentication
+        id: auth
+        shell: bash
+        run: |
+          if [[ -n "$GPTOMEK_APP_CLIENT_ID" && -n "$GPTOMEK_APP_PRIVATE_KEY" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::GPTomek app credentials are not configured yet; upkeep is idle."
+          fi
+
+      - name: Checkout upkeep scripts
+        if: steps.auth.outputs.configured == 'true'
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts/org-upkeep.cjs
+            .github/scripts/pr-upkeep.cjs
+          sparse-checkout-cone-mode: false
+
+      - name: Create scoped GPTomek token
+        if: steps.auth.outputs.configured == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.GPTOMEK_APP_CLIENT_ID }}
+          private-key: ${{ secrets.GPTOMEK_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-checks: read
+          permission-contents: write
+          permission-pull-requests: write
+          permission-statuses: read
+
+      - name: Process installation repositories
+        if: steps.auth.outputs.configured == 'true'
+        uses: actions/github-script@v9
+        env:
+          AUTOMERGE_ALLOW_NO_CHECKS: >-
+            ${{ vars.PR_AUTOMERGE_ALLOW_NO_CHECKS || 'false' }}
+          AUTOMERGE_ENABLED: "false"
+          AUTOMERGE_IDLE_HOURS: ${{ vars.PR_AUTOMERGE_IDLE_HOURS || '4' }}
+          AUTOMERGE_LABEL: ${{ vars.PR_AUTOMERGE_LABEL || 'automerge' }}
+          AUTOMERGE_METHOD: ${{ vars.PR_AUTOMERGE_METHOD || 'squash' }}
+          PR_UPKEEP_EXCLUDE_REPOS: ${{ vars.PR_UPKEEP_EXCLUDE_REPOS || '' }}
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const run = require('./.github/scripts/org-upkeep.cjs');
+            await run({ github, core });
+
+      - name: Explain idle state
+        if: steps.auth.outputs.configured != 'true'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            await core.summary
+              .addRaw(
+                '## Organization upkeep\n\n' +
+                  'Idle until `GPTOMEK_APP_CLIENT_ID` and ' +
+                  '`GPTOMEK_APP_PRIVATE_KEY` are configured.',
+              )
+              .write();
