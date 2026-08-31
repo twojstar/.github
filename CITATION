@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: "_"
+message: 滚
+type: software
+authors:
+  - name: trvny
+  - name: github-actions[bot]
+  - name: dependabot[bot]
+  - name: actions-user
+  - name: claude
+  - name: chatgpt
+  - name: codex
+  - name: chatgpt-codex-connector
+  - name: gptomek[bot]
+  - name: claudiusz69[bot]
+  - name: devin-ai-integration[bot]
+identifiers:
+  - type: url
+    value: 'https://trfny.com'
+repository-code: 'https://github.com/twojstar/.github'
+url: 'https://travny.pages.dev/'
+license: ISC
+version: 0.0.0
+date-released: '2026-08-29'
