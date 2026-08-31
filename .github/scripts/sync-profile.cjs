@@ -6,7 +6,7 @@ const QUOTE_START = '<!--STARTS_HERE_QUOTE_README-->';
 const QUOTE_END = '<!--ENDS_HERE_QUOTE_README-->';
 const FEED_START = '<!--README_FEED:START-->';
 const FEED_END = '<!--README_FEED:END-->';
-const PROFILE_PATH = 'profile/README.md';
+const TARGET_PATHS = ['README.md', 'profile/README.md'];
 const SOURCE_URL =
   process.env.PROFILE_DRAWER_SOURCE_URL ||
   'https://raw.githubusercontent.com/trvny/trvny/main/README.md';
@@ -106,8 +106,8 @@ async function fetchDrawerSource() {
 module.exports = async function syncProfile({ github, context, core }) {
   const owner = context.repo.owner;
   const repo = context.repo.repo;
-  const [profile, source, openPrs] = await Promise.all([
-    readRepoFile(github, owner, repo, PROFILE_PATH),
+  const [targets, source, openPrs] = await Promise.all([
+    Promise.all(TARGET_PATHS.map((path) => readRepoFile(github, owner, repo, path))),
     fetchDrawerSource(),
     listOrgOpenPrs(github, owner),
   ]);
@@ -115,26 +115,31 @@ module.exports = async function syncProfile({ github, context, core }) {
   const quote = extractBlock(source, QUOTE_START, QUOTE_END);
   const feed = extractBlock(source, FEED_START, FEED_END);
   const open = [OPEN_START, renderOpenPrTable(openPrs), OPEN_END].join('\n');
+  let changed = false;
 
-  let updated = replaceBlock(profile.content, OPEN_START, OPEN_END, open);
-  updated = replaceBlock(updated, QUOTE_START, QUOTE_END, quote);
-  updated = replaceBlock(updated, FEED_START, FEED_END, feed);
+  for (const [index, target] of targets.entries()) {
+    const path = TARGET_PATHS[index];
+    let updated = target.content;
+    if (path === 'profile/README.md') {
+      updated = replaceBlock(updated, OPEN_START, OPEN_END, open);
+    }
+    updated = replaceBlock(updated, QUOTE_START, QUOTE_END, quote);
+    updated = replaceBlock(updated, FEED_START, FEED_END, feed);
+    if (updated === target.content) continue;
 
-  if (updated === profile.content) {
-    core.info('Organization profile drawers are already current.');
-    return { changed: false, openPullRequests: openPrs.length };
+    await github.rest.repos.createOrUpdateFileContents({
+      owner,
+      repo,
+      path,
+      message: `chore(readme): refresh ${path} drawers [skip ci]`,
+      content: Buffer.from(updated, 'utf8').toString('base64'),
+      sha: target.sha,
+    });
+    changed = true;
+    core.info(`Refreshed ${path}.`);
   }
 
-  await github.rest.repos.createOrUpdateFileContents({
-    owner,
-    repo,
-    path: PROFILE_PATH,
-    message: 'chore(profile): refresh organization drawers [skip ci]',
-    content: Buffer.from(updated, 'utf8').toString('base64'),
-    sha: profile.sha,
-  });
-  core.info(`Refreshed profile drawers and ${openPrs.length} open PR(s).`);
-  return { changed: true, openPullRequests: openPrs.length };
+  return { changed, openPullRequests: openPrs.length };
 };
 
 module.exports._test = {
