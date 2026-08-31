@@ -3,7 +3,8 @@ name: organization upkeep
 
 on: # yamllint disable-line rule:truthy
   schedule:
-    - cron: "37 21 */2 * *"
+    # Run shortly after the legacy trvny upkeep refreshes the source drawers.
+    - cron: "52 21 */2 * *"
   workflow_dispatch:
 
 concurrency:
@@ -14,6 +15,34 @@ permissions:
   contents: read
 
 jobs:
+  profile:
+    name: Refresh organization profile
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout profile upkeep script
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts/sync-profile.cjs
+          sparse-checkout-cone-mode: false
+
+      - name: Refresh PR and drawer sections
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const sync = require('./.github/scripts/sync-profile.cjs');
+            const result = await sync({ github, context, core });
+            await core.summary
+              .addRaw(
+                `## Organization profile\n\n` +
+                  `Updated: ${result.changed ? 'yes' : 'no'}\n\n` +
+                  `Open PRs: ${result.openPullRequests}`,
+              )
+              .write();
+
   upkeep:
     name: Maintain organization PRs
     runs-on: ubuntu-slim
@@ -30,9 +59,8 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::GPTomek app credentials are not configured yet; upkeep is idle."
+            echo "::notice::GPTomek credentials are not configured; cross-repo upkeep is idle."
           fi
-
       - name: Checkout upkeep scripts
         if: steps.auth.outputs.configured == 'true'
         uses: actions/checkout@v7.0.1
@@ -80,8 +108,8 @@ jobs:
           script: |
             await core.summary
               .addRaw(
-                '## Organization upkeep\n\n' +
-                  'Idle until `GPTOMEK_APP_CLIENT_ID` and ' +
-                  '`GPTOMEK_APP_PRIVATE_KEY` are configured.',
+                '## Cross-repository upkeep\n\n' +
+                  'Idle until `GPTOMEK_APP_PRIVATE_KEY` is configured. ' +
+                  'Profile drawers are refreshed independently.',
               )
               .write();
