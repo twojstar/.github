@@ -30,7 +30,7 @@ A home for open-source projects, tiny utilities, feeds, apps, experiments, and a
 
 Code, workflows, and configuration are licensed under [ISC](LICENSE). Original
 content, documentation, and graphics are available under
-[CC BY 4.0](docs/LICENSE.CC-BY-4.0). Third-party materials are documented in
+[CC BY 4.0](**/docs/LICENSE.CC-BY-4.0). Third-party materials are documented in
 [THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md).
 
 ---
