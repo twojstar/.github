@@ -23,3 +23,19 @@ Cross-repository PR maintenance is a separate layer. It uses a short-lived **GPT
 ## Migration rule
 
 Repositories move from `trvny/*` incrementally. The old location remains canonical until an actual GitHub transfer is complete; after a transfer, GitHub's repository redirect is relied on rather than maintaining duplicate repositories.
+
+---
+
+## 💬 Quote from the drawer
+
+<!-- markdownlint-disable MD033 -->
+<!--STARTS_HERE_QUOTE_README-->
+<i>❝“On two occasions I have been asked, ‘If you put into the machine wrong figures, will the right answers come out?’  I am not able rightly to apprehend the kind of confusion of ideas that could provoke such a question.”— Charles Babbage❞</i>
+<!--ENDS_HERE_QUOTE_README-->
+<!-- markdownlint-enable MD033 -->
+
+## 📰 Recently on the air
+
+<!--README_FEED:START-->
+- Waiting for the next upkeep run.
+<!--README_FEED:END-->
