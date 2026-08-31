@@ -27,7 +27,8 @@ No open pull requests. 🎉
 | project | home | what lives there |
 | --- | --- | --- |
 | 🏢 **Organization defaults** | [`.github`](https://github.com/twojstar/.github) | profile, community files, shared upkeep and organization plumbing |
-| 🚗 **Autka** | [`trvny/Autka`](https://github.com/trvny/Autka) | Android/KMP car-listing aggregator and backend |
+| 🚗 **Autka** | [`twojstar/Autka`](https://github.com/twojstar/Autka) | Android/KMP car-listing aggregator and backend |
+| 🤖 **LlmBench** | [`twojstar/llmbench`](https://github.com/twojstar/llmbench) | Android workspace for account-backed and free-provider LLM access |
 | 🐤 **Kanarek** | [`trvny/kanarek`](https://github.com/trvny/kanarek) | RSS/Atom reader, widgets, radio/IPTV and Worker backend |
 | 📡 **Feedseek** | [`trvny/feedseek`](https://github.com/trvny/feedseek) | feed discovery, repair and generation |
 | 📺 **TVPI** | [`trvny/tvpi`](https://github.com/trvny/tvpi) | IPTV tooling, web entry points and Worker bits |
