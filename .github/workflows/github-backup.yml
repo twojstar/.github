@@ -172,13 +172,27 @@ jobs:
 
           sum_bucket_bytes() {
             local soft_deleted="${1:-false}"
-            local args=()
+            local args=(--exhaustive)
+            local output status
             if [[ "$soft_deleted" == "true" ]]; then
               args+=(--soft-deleted)
             fi
-            {
-              gcloud storage ls -l "gs://${GCS_BUCKET}/**" "${args[@]}" 2>/dev/null || true
-            } | awk '$1 ~ /^[0-9]+$/ { total += $1 } END { printf "%.0f\n", total + 0 }'
+
+            set +e
+            output="$(gcloud storage ls -l "gs://${GCS_BUCKET}/**" "${args[@]}" 2>&1)"
+            status=$?
+            set -e
+
+            if (( status != 0 )); then
+              if grep -q 'matched no objects' <<<"$output"; then
+                echo 0
+                return 0
+              fi
+              printf '%s\n' "$output" >&2
+              return "$status"
+            fi
+
+            awk '$1 ~ /^[0-9]+$/ { total += $1 } END { printf "%.0f\n", total + 0 }' <<<"$output"
           }
 
           new_bytes="$(du -sb backup/github | cut -f1)"
