@@ -28,16 +28,77 @@ function headers(extra = {}) {
   };
 }
 
-async function requestJson(url, options = {}) {
-  const response = await fetch(url, {
-    ...options,
-    headers: headers(options.headers),
-  });
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`${response.status} ${response.statusText} for ${url}: ${body.slice(0, 1000)}`);
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function retryDelayMs(response, attempt) {
+  const retryAfter = response?.headers.get('retry-after');
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds)) return Math.min(Math.max(seconds * 1000, 1000), 60_000);
+    const timestamp = Date.parse(retryAfter);
+    if (Number.isFinite(timestamp)) return Math.min(Math.max(timestamp - Date.now(), 1000), 60_000);
   }
-  return { data: await response.json(), headers: response.headers };
+
+  const remaining = response?.headers.get('x-ratelimit-remaining');
+  const reset = Number(response?.headers.get('x-ratelimit-reset'));
+  if (remaining === '0' && Number.isFinite(reset)) {
+    return Math.min(Math.max(reset * 1000 - Date.now() + 1000, 1000), 60_000);
+  }
+
+  return Math.min(1000 * 2 ** attempt, 16_000);
+}
+
+async function requestJson(url, options = {}) {
+  const maxAttempts = 5;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    let response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers: headers(options.headers),
+      });
+    } catch (error) {
+      if (attempt + 1 >= maxAttempts) throw error;
+      const delay = retryDelayMs(null, attempt);
+      console.error(`GitHub request network failure; retrying in ${delay}ms: ${url}`);
+      await sleep(delay);
+      continue;
+    }
+
+    const body = await response.text();
+    if (response.ok) {
+      try {
+        return { data: body ? JSON.parse(body) : null, headers: response.headers };
+      } catch (error) {
+        if (attempt + 1 >= maxAttempts) {
+          throw new Error(`Invalid JSON from ${url}: ${error.message}`);
+        }
+        const delay = retryDelayMs(response, attempt);
+        console.error(`Invalid GitHub JSON; retrying in ${delay}ms: ${url}`);
+        await sleep(delay);
+        continue;
+      }
+    }
+
+    const rateLimited =
+      response.status === 429 ||
+      (response.status === 403 &&
+        (response.headers.get('retry-after') ||
+          response.headers.get('x-ratelimit-remaining') === '0' ||
+          /(?:secondary )?rate limit/i.test(body)));
+    const retryable = rateLimited || response.status >= 500;
+    if (!retryable || attempt + 1 >= maxAttempts) {
+      throw new Error(`${response.status} ${response.statusText} for ${url}: ${body.slice(0, 1000)}`);
+    }
+
+    const delay = retryDelayMs(response, attempt);
+    console.error(`GitHub request ${response.status}; retrying in ${delay}ms: ${url}`);
+    await sleep(delay);
+  }
+
+  throw new Error(`GitHub request retries exhausted for ${url}`);
 }
 
 async function paginateRest(endpoint, params = {}) {
@@ -60,7 +121,50 @@ function writeJson(file, data) {
 }
 
 function writeJsonl(file, items) {
-  fs.writeFileSync(file, items.map((item) => JSON.stringify(item)).join('\n') + (items.length ? '\n' : ''));
+  const descriptor = fs.openSync(file, 'w');
+  try {
+    for (const item of items) fs.writeSync(descriptor, `${JSON.stringify(item)}\n`);
+  } finally {
+    fs.closeSync(descriptor);
+  }
+}
+
+function normalizeGraphqlReview(pullNumber, review) {
+  return {
+    pull_number: pullNumber,
+    id: review.databaseId ?? null,
+    node_id: review.id ?? null,
+    author_login: review.author?.login ?? null,
+    author_id: null,
+    author_association: review.authorAssociation ?? null,
+    state: review.state ?? null,
+    body: review.body ?? null,
+    submitted_at: review.submittedAt ?? null,
+    created_at: review.createdAt ?? null,
+    updated_at: review.updatedAt ?? null,
+    url: review.url ?? null,
+    commit_id: review.commit?.oid ?? null,
+    source_api: 'graphql',
+  };
+}
+
+function normalizeRestReview(pullNumber, review) {
+  return {
+    pull_number: pullNumber,
+    id: review.id ?? null,
+    node_id: review.node_id ?? null,
+    author_login: review.user?.login ?? null,
+    author_id: review.user?.id ?? null,
+    author_association: review.author_association ?? null,
+    state: review.state ?? null,
+    body: review.body ?? null,
+    submitted_at: review.submitted_at ?? null,
+    created_at: review.created_at ?? null,
+    updated_at: review.updated_at ?? null,
+    url: review.html_url ?? null,
+    commit_id: review.commit_id ?? null,
+    source_api: 'rest',
+  };
 }
 
 async function fetchPullReviews() {
@@ -108,9 +212,9 @@ async function fetchPullReviews() {
     for (const pull of pulls.nodes) {
       if (pull.reviews.pageInfo.hasNextPage) {
         const overflow = await paginateRest(`/repos/${owner}/${repo}/pulls/${pull.number}/reviews`);
-        reviews.push(...overflow.map((review) => ({ pull_number: pull.number, review })));
+        reviews.push(...overflow.map((review) => normalizeRestReview(pull.number, review)));
       } else {
-        reviews.push(...pull.reviews.nodes.map((review) => ({ pull_number: pull.number, review })));
+        reviews.push(...pull.reviews.nodes.map((review) => normalizeGraphqlReview(pull.number, review)));
       }
     }
     cursor = pulls.pageInfo.hasNextPage ? pulls.pageInfo.endCursor : null;
