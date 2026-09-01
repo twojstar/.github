@@ -8,7 +8,7 @@ if (!target || !target.includes('/')) {
 }
 const [owner, repo] = target.split('/');
 const ciCrossRepo = process.env.GITHUB_ACTIONS === 'true' && process.env.GITHUB_REPOSITORY !== target;
-const token = ciCrossRepo ? '' : (process.env.AUDIT_GH_TOKEN || process.env.GH_TOKEN || '');
+const token = process.env.AUDIT_GH_TOKEN || (!ciCrossRepo ? (process.env.GH_TOKEN || '') : '');
 const headers = {
   Accept: 'application/vnd.github+json',
   'X-GitHub-Api-Version': '2022-11-28',
@@ -49,6 +49,14 @@ async function apiAll(path) {
 let defaultBranch = 'main';
 /** Fetch repository text and fail closed on transient or permission errors. */
 async function raw(path) {
+  if (token) {
+    const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${encodedPath}?ref=${encodeURIComponent(defaultBranch)}`, {
+      headers: { ...headers, Accept: 'application/vnd.github.raw+json' },
+    });
+    if (!response.ok) throw new Error(`${path}: contents HTTP ${response.status}`);
+    return response.text();
+  }
   const url = `https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/${path}`;
   const response = await fetch(url, { headers: { 'User-Agent': headers['User-Agent'] } });
   if (!response.ok) throw new Error(`${path}: raw HTTP ${response.status}`);
@@ -103,10 +111,36 @@ function result(name, status, detail) {
   if (!dependabotPath) result('Dependabot', 'FAIL', 'missing .github/dependabot.yml');
   else {
     const config = await raw(dependabotPath);
-    const ecosystems = [...config.matchAll(/^\s*-\s*package-ecosystem:\s*["']?([a-z0-9_-]+)["']?\s*(?:#.*)?$/gim)];
-    const hasDirectory = /^\s*(?:directory|directories):\s*\S+/m.test(config);
-    const usable = /^\s*version:\s*2\s*$/m.test(config) && ecosystems.length > 0 && hasDirectory;
-    result('Dependabot', usable ? 'PASS' : 'FAIL', usable ? `${ecosystems.length} update ecosystem(s)` : 'no usable updates entry with ecosystem and directory');
+    const cleaned = config.split(/\r?\n/).map((line) => line.replace(/\s+#.*$/, '')).join('\n');
+    const lines = cleaned.split('\n');
+    const updatesLine = lines.findIndex((line) => /^\s*updates:\s*$/.test(line));
+    const updateBlocks = [];
+    if (updatesLine >= 0) {
+      const baseIndent = lines[updatesLine].match(/^\s*/)[0].length;
+      let current = [];
+      for (let i = updatesLine + 1; i < lines.length; i += 1) {
+        const line = lines[i];
+        if (!line.trim()) continue;
+        const indent = line.match(/^\s*/)[0].length;
+        if (indent <= baseIndent) break;
+        if (indent === baseIndent + 2 && /^\s*-\s+/.test(line)) {
+          if (current.length) updateBlocks.push(current);
+          current = [line.replace(/^\s*-\s*/, '  ')];
+        } else if (current.length) current.push(line);
+      }
+      if (current.length) updateBlocks.push(current);
+    }
+    const knownEcosystems = new Set(['bundler','bun','cargo','composer','devcontainers','docker','docker-compose','dotnet-sdk','elm','gitsubmodule','github-actions','gomod','gradle','helm','hex','maven','mix','npm','nuget','pip','pip-compile','pipenv','pnpm','pub','swift','terraform','uv','vcpkg']);
+    const validUpdates = updateBlocks.filter((blockLines) => {
+      const block = blockLines.join('\n');
+      const eco = block.match(/^\s*package-ecosystem:\s*["']?([^"'#\s]+)["']?\s*$/mi)?.[1];
+      const directory = block.match(/^\s*directory:\s*["']?([^"'#\s]+)["']?\s*$/mi)?.[1];
+      const directories = /^\s*directories:\s*$/mi.test(block) && /^\s*-\s*["']?[^"'#\s]+/m.test(block.slice(block.search(/^\s*directories:\s*$/mi)));
+      const schedule = /^\s*schedule:\s*$/mi.test(block) && /^\s*interval:\s*["']?[^"'#\s]+/mi.test(block);
+      return knownEcosystems.has((eco || '').toLowerCase()) && Boolean(directory || directories) && schedule;
+    });
+    const usable = /^\s*version:\s*2\s*$/m.test(cleaned) && validUpdates.length > 0;
+    result('Dependabot', usable ? 'PASS' : 'FAIL', usable ? `${validUpdates.length} valid update entr${validUpdates.length === 1 ? 'y' : 'ies'}` : 'no complete updates entry with supported ecosystem, path and schedule');
   }
 
   const rulesets = await apiAll(`/repos/${owner}/${repo}/rulesets`);
@@ -122,7 +156,10 @@ function result(name, status, detail) {
   let advancedWorkflow = '';
   for (const path of workflowPaths) {
     const text = await raw(path);
-    if (/github\/codeql-action\/(?:init|analyze|autobuild)@/i.test(text)) {
+    const executableLines = text.split(/\r?\n/).filter((line) => !/^\s*#/.test(line));
+    const hasInit = executableLines.some((line) => /^\s*(?:-\s*)?uses:\s*["']?github\/codeql-action\/init@/i.test(line));
+    const hasAnalyze = executableLines.some((line) => /^\s*(?:-\s*)?uses:\s*["']?github\/codeql-action\/analyze@/i.test(line));
+    if (hasInit && hasAnalyze) {
       advancedWorkflow = path;
       break;
     }

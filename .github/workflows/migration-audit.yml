@@ -24,4 +24,5 @@ jobs:
         env:
           TARGET_REPO: ${{ inputs.repository }}
           LEGACY_OWNER: ${{ inputs.legacy_owner }}
+          AUDIT_GH_TOKEN: ${{ secrets.AUDIT_GH_TOKEN }}
         run: node .github/scripts/migration-audit.cjs
