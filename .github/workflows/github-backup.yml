@@ -18,6 +18,7 @@ env:
   GCP_PROJECT_ID: gen-lang-client-0123391680
   GCS_BUCKET: zasobnik-tr-github
   WIF_PROVIDER: projects/833314992090/locations/global/workloadIdentityPools/github-actions/providers/twojstar-backup
+  MAX_BACKUP_BYTES: "2147483648"
 
 jobs:
   backup:
@@ -107,18 +108,30 @@ jobs:
             sed 's/^/  - /' "$repos_file"
           } > backup/github/MANIFEST.txt
 
+      - name: Guard Free Tier headroom
+        shell: bash
+        run: |
+          bytes="$(du -sb backup/github | cut -f1)"
+          if (( bytes > MAX_BACKUP_BYTES )); then
+            echo "::error::Backup is ${bytes} bytes; refusing to exceed the 2 GiB safety cap."
+            exit 1
+          fi
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
 
-      - name: Upload backup
-        uses: google-github-actions/upload-cloud-storage@v3
-        with:
-          path: backup/github
-          destination: ${{ env.GCS_BUCKET }}/github
-          parent: false
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3.0.1
+
+      - name: Sync backup to Cloud Storage
+        shell: bash
+        run: |
+          gcloud storage rsync backup/github "gs://${GCS_BUCKET}/github" \
+            --recursive \
+            --delete-unmatched-destination-objects
 
       - name: Summarize backup
         shell: bash
