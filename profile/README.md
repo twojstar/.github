@@ -37,10 +37,10 @@
 | 🏢 **Organization defaults** | [`.github`](https://github.com/twojstar/.github) | profile, community files, shared upkeep and organization plumbing |
 | 🚗 **Autka** | [`twojstar/Autka`](https://github.com/twojstar/Autka) | Android/KMP car-listing aggregator and backend |
 | 🤖 **LlmBench** | [`twojstar/llmbench`](https://github.com/twojstar/llmbench) | Android workspace for account-backed and free-provider LLM access |
-| 🐤 **Kanarek** | [`trvny/kanarek`](https://github.com/trvny/kanarek) | RSS/Atom reader, widgets, radio/IPTV and Worker backend |
+| 🐤 **Kanarek** | [`twojstar/kanarek`](https://github.com/twojstar/kanarek) | RSS/Atom reader, widgets, radio/IPTV and Worker backend |
 | 📡 **Feedseek** | [`trvny/feedseek`](https://github.com/trvny/feedseek) | feed discovery, repair and generation |
 | 📺 **TVPI** | [`trvny/tvpi`](https://github.com/trvny/tvpi) | IPTV tooling, web entry points and Worker bits |
-| 🔊 **WAM Bridge** | [`trvny/wambridge`](https://github.com/trvny/wambridge) | Samsung Wireless Audio Multiroom bridge and foobar2000 output |
+| 🔊 **WAM Bridge** | [`twojstar/wambridge`](https://github.com/twojstar/wambridge) | Samsung Wireless Audio Multiroom bridge and foobar2000 output |
 | 🧰 **Workshop** | [`trvny/trvny`](https://github.com/trvny/trvny) | benches, GitHub Apps, experiments, Workers and the cupboard where the cables live |
 
 Repositories move here gradually. Until a repository is transferred, its `trvny/*` location remains canonical and GitHub redirects will preserve old links after migration.
