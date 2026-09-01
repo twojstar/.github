@@ -27,14 +27,6 @@ async function api(path) {
   if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
   return response.json();
 }
-/** Probe an authenticated-only endpoint without confusing unreadable with absent. */
-async function probe(path) {
-  const response = await fetch(`https://api.github.com${path}`, { headers });
-  if ([401, 403, 404].includes(response.status)) return { status: response.status, data: null };
-  if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
-  return { status: response.status, data: await response.json() };
-}
-
 /** Retrieve all pages from a standard GitHub list endpoint. */
 async function apiAll(path) {
   const separator = path.includes('?') ? '&' : '?';
@@ -125,20 +117,6 @@ function result(name, status, detail) {
   }
   result('Copilot auto-review', copilot ? 'PASS' : 'FAIL', copilot ? 'active ruleset found' : 'no active copilot_code_review ruleset');
 
-  const checkRuns = await api(`/repos/${owner}/${repo}/commits/${encodeURIComponent(defaultBranch)}/check-runs?per_page=100`);
-  const codeqlRuns = (checkRuns.check_runs || []).filter((run) => /^(?:CodeQL|Analyze(?:\s|\())/i.test(run.name || ''));
-  const successfulCodeql = codeqlRuns.filter((run) => run.conclusion === 'success');
-  const activeCodeql = codeqlRuns.filter((run) => ['queued', 'in_progress'].includes(run.status));
-  if (successfulCodeql.length) {
-    result('CodeQL', 'PASS', `successful check(s) on default branch: ${[...new Set(successfulCodeql.map((run) => run.name))].join(', ')}`);
-  } else if (activeCodeql.length) {
-    result('CodeQL', 'WARN', 'CodeQL check is currently running on the default branch');
-  } else {
-    const defaultSetup = token ? await probe(`/repos/${owner}/${repo}/code-scanning/default-setup`) : { status: 0, data: null };
-    if (defaultSetup.data?.state === 'configured') result('CodeQL', 'PASS', 'default setup is configured');
-    else result('CodeQL', 'WARN', 'no successful CodeQL check found on the current default-branch commit');
-  }
-
   const security = metadata.security_and_analysis;
   if (security) {
     for (const [key, label] of [['secret_scanning', 'Secret scanning'], ['secret_scanning_push_protection', 'Push protection']]) {
@@ -151,6 +129,7 @@ function result(name, status, detail) {
 
   const manual = [
     'GitHub Apps are scoped to the transferred repository',
+    'CodeQL/code scanning has a successful run after transfer',
     'Cloudflare Workers Builds / Pages source access still works where applicable',
     'webhooks, environments, secrets and rulesets match the pre-transfer inventory',
     'local clones use the new origin URL',
@@ -164,7 +143,7 @@ function result(name, status, detail) {
     '## Manual follow-up',
     ...manual.map((item) => `- [ ] ${item}`),
     '',
-    token ? '_Authenticated audit._' : '_Public cross-repository audit. Run locally with `GH_TOKEN` for CodeQL default setup and admin-only security details._',
+    token ? '_Authenticated audit._' : '_Public cross-repository audit. Run locally with `GH_TOKEN` for admin-only security details._',
   ];
   const report = `${lines.join('\n')}\n`;
   console.log(report);
