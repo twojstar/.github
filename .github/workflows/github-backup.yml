@@ -96,9 +96,9 @@ jobs:
             auth_mode="public-fallback"
             GH_TOKEN="$PUBLIC_TOKEN" gh api --paginate \
               'users/trvny/repos?type=owner&per_page=100' \
-              --jq '.[].full_name' >> "$repos_file"
+              --jq '.[] | select(.visibility == "public") | .full_name' >> "$repos_file"
             GH_TOKEN="$PUBLIC_TOKEN" gh api --paginate \
-              'orgs/twojstar/repos?type=all&per_page=100' \
+              'orgs/twojstar/repos?type=public&per_page=100' \
               --jq '.[].full_name' >> "$repos_file"
           fi
           sort -u -o "$repos_file" "$repos_file"
@@ -259,10 +259,17 @@ jobs:
 
       - name: Sync backup to Cloud Storage
         shell: bash
+        env:
+          FULL_BACKUP: ${{ steps.auth.outputs.configured }}
         run: |
-          gcloud storage rsync backup/github "gs://${GCS_BUCKET}/github" \
-            --recursive \
-            --delete-unmatched-destination-objects
+          if [[ "$FULL_BACKUP" == "true" ]]; then
+            gcloud storage rsync backup/github "gs://${GCS_BUCKET}/github" \
+              --recursive \
+              --delete-unmatched-destination-objects
+          else
+            echo "::notice::Public fallback is non-destructive; existing private archives are preserved."
+            gcloud storage rsync backup/github "gs://${GCS_BUCKET}/github" --recursive
+          fi
 
       - name: Summarize backup
         shell: bash
