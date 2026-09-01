@@ -158,7 +158,12 @@ jobs:
               for key, value in expected.items()
               if bucket.get(key) != value
           ]
-          retention = str(bucket.get("soft_delete_policy", {}).get("retentionDurationSeconds"))
+          soft_delete = bucket.get("soft_delete_policy", {})
+          retention = soft_delete.get("retentionDurationSeconds")
+          if retention is None:
+              duration = str(soft_delete.get("retentionDuration", ""))
+              retention = duration.removesuffix("s") if duration else None
+          retention = str(retention)
           if retention != "604800":
               failures.append(f"soft-delete retention={retention!r}, expected '604800'")
           if failures:
