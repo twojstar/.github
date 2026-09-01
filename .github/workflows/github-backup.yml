@@ -153,7 +153,7 @@ jobs:
             if [[ -z "$api_token" ]]; then
               api_token="$PUBLIC_TOKEN"
             fi
-            GH_TOKEN="$api_token" node \
+            GH_TOKEN="$api_token" GIT_AUTH_TOKEN="$token" node \
               "$GITHUB_WORKSPACE/.github/scripts/github-backup-metadata.cjs" \
               "$repo" "$mirror" "$metadata_dir"
             tar -C "work/github-metadata/$owner" \
@@ -176,7 +176,7 @@ jobs:
             printf 'repository_count=%s\n' "$(wc -l < "$repos_file" | tr -d ' ')"
             printf 'archive_count=%s\n' "$(wc -l < "$archives_file" | tr -d ' ')"
             printf 'auth_mode=%s\n' "$auth_mode"
-            printf 'metadata_schema_version=1\n'
+            printf 'metadata_schema_version=2\n'
             printf 'repositories:\n'
             sed 's/^/  - /' "$repos_file"
             printf 'archives:\n'
@@ -325,7 +325,7 @@ jobs:
             printf 'repository_count=%s\n' "$(wc -l < "$repos" | tr -d ' ')"
             printf 'archive_count=%s\n' "$(wc -l < "$archives" | tr -d ' ')"
             printf 'auth_mode=public-fallback\n'
-            printf 'metadata_schema_version=1\n'
+            printf 'metadata_schema_version=2\n'
             printf 'metadata_scope=live-archive-union\n'
             printf 'repositories:\n'
             sed 's/^/  - /' "$repos"
