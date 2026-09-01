@@ -166,6 +166,11 @@ jobs:
           retention = str(retention)
           if retention != "604800":
               failures.append(f"soft-delete retention={retention!r}, expected '604800'")
+          versioning_enabled = bucket.get("versioning_enabled")
+          if versioning_enabled is None:
+              versioning_enabled = bucket.get("versioning", {}).get("enabled", False)
+          if versioning_enabled:
+              failures.append("object versioning must be disabled")
           if failures:
               raise SystemExit("Bucket policy drift: " + "; ".join(failures))
           PY
