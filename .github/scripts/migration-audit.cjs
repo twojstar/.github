@@ -16,21 +16,69 @@ const headers = {
 };
 if (token) headers.Authorization = `Bearer ${token}`;
 
-async function api(path, optional = false) {
+/** Escape user-controlled repository names before embedding them in a RegExp. */
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Perform one GitHub API request and require a successful response. */
+async function api(path) {
   const response = await fetch(`https://api.github.com${path}`, { headers });
-  if (optional && (response.status === 401 || response.status === 403 || response.status === 404)) return null;
   if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
   return response.json();
 }
-
-async function raw(path) {
-  const url = `https://raw.githubusercontent.com/${owner}/${repo}/${encodeURIComponent(defaultBranch)}/${path}`;
-  const response = await fetch(url, { headers: { 'User-Agent': headers['User-Agent'] } });
-  return response.ok ? response.text() : '';
+/** Probe an authenticated-only endpoint without confusing unreadable with absent. */
+async function probe(path) {
+  const response = await fetch(`https://api.github.com${path}`, { headers });
+  if ([401, 403, 404].includes(response.status)) return { status: response.status, data: null };
+  if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
+  return { status: response.status, data: await response.json() };
 }
+
+/** Retrieve all pages from a standard GitHub list endpoint. */
+async function apiAll(path) {
+  const separator = path.includes('?') ? '&' : '?';
+  const items = [];
+  for (let page = 1; ; page += 1) {
+    const batch = await api(`${path}${separator}per_page=100&page=${page}`);
+    items.push(...batch);
+    if (batch.length < 100) return items;
+  }
+}
+
 let defaultBranch = 'main';
+/** Fetch repository text and fail closed on transient or permission errors. */
+async function raw(path) {
+  const url = `https://raw.githubusercontent.com/${owner}/${repo}/${defaultBranch}/${path}`;
+  const response = await fetch(url, { headers: { 'User-Agent': headers['User-Agent'] } });
+  if (!response.ok) throw new Error(`${path}: raw HTTP ${response.status}`);
+  return response.text();
+}
+
+/** Return a complete blob path listing, traversing subtrees if GitHub truncates recursion. */
+async function listBlobPaths() {
+  const recursive = await api(`/repos/${owner}/${repo}/git/trees/${encodeURIComponent(defaultBranch)}?recursive=1`);
+  if (!recursive.truncated) return recursive.tree.filter((entry) => entry.type === 'blob').map((entry) => entry.path);
+  const paths = [];
+  const queue = [{ sha: recursive.sha, prefix: '' }];
+  let traversed = 0;
+  while (queue.length) {
+    const current = queue.shift();
+    traversed += 1;
+    if (traversed > 5000) throw new Error('repository tree traversal exceeded safety bound');
+    const tree = await api(`/repos/${owner}/${repo}/git/trees/${current.sha}`);
+    for (const entry of tree.tree) {
+      const path = current.prefix ? `${current.prefix}/${entry.path}` : entry.path;
+      if (entry.type === 'blob') paths.push(path);
+      if (entry.type === 'tree') queue.push({ sha: entry.sha, prefix: path });
+    }
+  }
+  return paths;
+}
+
 const rows = [];
 let failed = false;
+/** Record one audit result and remember hard failures for the process exit code. */
 function result(name, status, detail) {
   rows.push({ name, status, detail });
   if (status === 'FAIL') failed = true;
@@ -41,10 +89,9 @@ function result(name, status, detail) {
   defaultBranch = metadata.default_branch;
   result('Repository', metadata.private ? 'WARN' : 'PASS', `${metadata.full_name} (${metadata.visibility})`);
 
-  const tree = await api(`/repos/${owner}/${repo}/git/trees/${encodeURIComponent(defaultBranch)}?recursive=1`);
-  const paths = tree.tree.filter((entry) => entry.type === 'blob').map((entry) => entry.path);
+  const paths = await listBlobPaths();
   const readmes = paths.filter((path) => /(^|\/)README[^/]*\.md$/i.test(path));
-  const legacyPattern = new RegExp(`(?:github\\.com|raw\\.githubusercontent\\.com|deepwiki\\.com|img\\.shields\\.io/github/license)/${legacyOwner}/${repo}`, 'i');
+  const legacyPattern = new RegExp(`(?:github\\.com|raw\\.githubusercontent\\.com|deepwiki\\.com|img\\.shields\\.io/github/license)/${escapeRegex(legacyOwner)}/${escapeRegex(repo)}`, 'i');
   const stale = [];
   for (const path of readmes) {
     const text = await raw(path);
@@ -56,24 +103,40 @@ function result(name, status, detail) {
   if (!dependabotPath) result('Dependabot', 'FAIL', 'missing .github/dependabot.yml');
   else {
     const config = await raw(dependabotPath);
-    const emptyEcosystem = /package-ecosystem:\s*["']?\s*["']?(?:#|\r?$)/m.test(config);
-    result('Dependabot', emptyEcosystem ? 'FAIL' : 'PASS', emptyEcosystem ? 'placeholder package-ecosystem detected' : 'configuration present');
+    const ecosystems = [...config.matchAll(/^\s*-\s*package-ecosystem:\s*["']?([a-z0-9_-]+)["']?\s*(?:#.*)?$/gim)];
+    const hasDirectory = /^\s*(?:directory|directories):\s*\S+/m.test(config);
+    const usable = /^\s*version:\s*2\s*$/m.test(config) && ecosystems.length > 0 && hasDirectory;
+    result('Dependabot', usable ? 'PASS' : 'FAIL', usable ? `${ecosystems.length} update ecosystem(s)` : 'no usable updates entry with ecosystem and directory');
   }
-  const rulesets = await api(`/repos/${owner}/${repo}/rulesets`, true) || [];
+
+  const rulesets = await apiAll(`/repos/${owner}/${repo}/rulesets`);
   let copilot = false;
   for (const item of rulesets) {
     if (item.enforcement !== 'active') continue;
-    const detail = await api(`/repos/${owner}/${repo}/rulesets/${item.id}`, true);
-    if (detail?.rules?.some((rule) => rule.type === 'copilot_code_review')) copilot = true;
+    const detail = await api(`/repos/${owner}/${repo}/rulesets/${item.id}`);
+    if (detail.rules?.some((rule) => rule.type === 'copilot_code_review')) copilot = true;
   }
   result('Copilot auto-review', copilot ? 'PASS' : 'FAIL', copilot ? 'active ruleset found' : 'no active copilot_code_review ruleset');
 
-  const codeqlWorkflow = paths.find((path) => /^\.github\/workflows\/.*codeql.*\.ya?ml$/i.test(path));
-  let defaultSetup = null;
-  if (token) defaultSetup = await api(`/repos/${owner}/${repo}/code-scanning/default-setup`, true);
-  const codeqlConfigured = Boolean(codeqlWorkflow) || defaultSetup?.state === 'configured';
-  if (codeqlConfigured) result('CodeQL', 'PASS', codeqlWorkflow || `default setup: ${(defaultSetup.languages || []).join(', ') || 'configured'}`);
-  else result('CodeQL', token ? 'FAIL' : 'WARN', token ? 'not configured' : 'no committed workflow; rerun locally with GH_TOKEN to verify default setup');
+  const workflowPaths = paths.filter((path) => /^\.github\/workflows\/.*\.ya?ml$/i.test(path));
+  let advancedWorkflow = '';
+  for (const path of workflowPaths) {
+    const text = await raw(path);
+    if (/github\/codeql-action\/(?:init|analyze|autobuild)@/i.test(text)) {
+      advancedWorkflow = path;
+      break;
+    }
+  }
+  let defaultSetup = { status: 0, data: null };
+  if (token && !advancedWorkflow) defaultSetup = await probe(`/repos/${owner}/${repo}/code-scanning/default-setup`);
+  if (advancedWorkflow) result('CodeQL', 'PASS', `advanced workflow: ${advancedWorkflow}`);
+  else if (defaultSetup.data?.state === 'configured') {
+    result('CodeQL', 'PASS', `default setup: ${(defaultSetup.data.languages || []).join(', ') || 'configured'}`);
+  } else if (token && defaultSetup.status === 200) {
+    result('CodeQL', 'FAIL', `default setup state: ${defaultSetup.data?.state || 'unknown'}`);
+  } else {
+    result('CodeQL', 'WARN', 'default setup is not verifiable with current credentials');
+  }
 
   const security = metadata.security_and_analysis;
   if (security) {
@@ -96,8 +159,7 @@ function result(name, status, detail) {
     '',
     '| Check | Status | Detail |',
     '| --- | --- | --- |',
-    ...rows.map((row) => `| ${row.name} | ${row.status} | ${String(row.detail).replaceAll('|', '\\|')} |`),
-    '',
+    ...rows.map((row) => `| ${row.name} | ${row.status} | ${String(row.detail).replaceAll('|', '\\|')} |`),    '',
     '## Manual follow-up',
     ...manual.map((item) => `- [ ] ${item}`),
     '',
