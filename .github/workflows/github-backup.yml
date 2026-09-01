@@ -1,0 +1,137 @@
+---
+name: GitHub backup
+
+on: # yamllint disable-line rule:truthy
+  schedule:
+    - cron: "37 3 * * 0"
+  workflow_dispatch:
+
+concurrency:
+  group: github-gcs-backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: gen-lang-client-0123391680
+  GCS_BUCKET: zasobnik-tr-github
+  WIF_PROVIDER: projects/833314992090/locations/global/workloadIdentityPools/github-actions/providers/twojstar-backup
+
+jobs:
+  backup:
+    name: Back up GitHub repositories
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout control repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Create trvny read token
+        id: trvny-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.GPTOMEK_APP_CLIENT_ID }}
+          private-key: ${{ secrets.GPTOMEK_APP_PRIVATE_KEY }}
+          owner: trvny
+          permission-contents: read
+
+      - name: Create twojstar read token
+        id: twojstar-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.GPTOMEK_APP_CLIENT_ID }}
+          private-key: ${{ secrets.GPTOMEK_APP_PRIVATE_KEY }}
+          owner: twojstar
+          permission-contents: read
+
+      - name: Build repository archives
+        shell: bash
+        env:
+          TRVNY_TOKEN: ${{ steps.trvny-token.outputs.token }}
+          TWOJSTAR_TOKEN: ${{ steps.twojstar-token.outputs.token }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p backup/github work
+          repos_file="$(mktemp)"
+
+          GH_TOKEN="$TRVNY_TOKEN" gh api --paginate installation/repositories \
+            --jq '.repositories[].full_name' >> "$repos_file"
+          GH_TOKEN="$TWOJSTAR_TOKEN" gh api --paginate installation/repositories \
+            --jq '.repositories[].full_name' >> "$repos_file"
+          sort -u -o "$repos_file" "$repos_file"
+
+          while IFS= read -r repo; do
+            [[ -n "$repo" ]] || continue
+            owner="${repo%%/*}"
+            name="${repo#*/}"
+
+            case "$owner" in
+              trvny) token="$TRVNY_TOKEN" ;;
+              twojstar) token="$TWOJSTAR_TOKEN" ;;
+              *) continue ;;
+            esac
+
+            mirror="work/$owner/$name.git"
+            archive="backup/github/$owner/$name.git.tar.gz"
+            mkdir -p "work/$owner" "backup/github/$owner"
+
+            auth="$(printf 'x-access-token:%s' "$token" | base64 -w0)"
+            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
+              clone --mirror "https://github.com/$repo.git" "$mirror"
+
+            git -C "$mirror" config \
+              http.https://github.com/.extraheader "AUTHORIZATION: basic $auth"
+            if git lfs version >/dev/null 2>&1; then
+              git -C "$mirror" lfs fetch --all
+            fi
+            git -C "$mirror" config --unset-all \
+              http.https://github.com/.extraheader || true
+
+            git -C "$mirror" fsck --full
+            tar -C "work/$owner" -czf "$archive" "$name.git"
+          done < "$repos_file"
+
+          (\n            cd backup/github\n            find . -type f -name '*.tar.gz' -print0 \
+              | sort -z \
+              | xargs -0 sha256sum\n          ) > backup/github/SHA256SUMS
+
+          {
+            printf 'generated_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            printf 'repository_count=%s\n' "$(wc -l < "$repos_file" | tr -d ' ')"
+            printf 'repositories:\n'
+            sed 's/^/  - /' "$repos_file"
+          } > backup/github/MANIFEST.txt
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+
+      - name: Upload backup
+        uses: google-github-actions/upload-cloud-storage@v3
+        with:
+          path: backup/github
+          destination: ${{ env.GCS_BUCKET }}/github
+          parent: false
+
+      - name: Summarize backup
+        shell: bash
+        run: |
+          files="$(find backup/github -type f | wc -l | tr -d ' ')"
+          bytes="$(du -sb backup/github | cut -f1)"
+          {
+            echo '## GitHub backup'
+            echo
+            echo "Files: $files"
+            echo
+            echo "Bytes: $bytes"
+            echo
+            echo "Destination: gs://${GCS_BUCKET}/github/"
+          } >> "$GITHUB_STEP_SUMMARY"
+
