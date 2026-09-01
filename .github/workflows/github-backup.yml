@@ -1,0 +1,243 @@
+---
+name: GitHub backup
+
+on: # yamllint disable-line rule:truthy
+  schedule:
+    - cron: "37 3 * * 0"
+  workflow_dispatch:
+
+concurrency:
+  group: github-gcs-backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: gen-lang-client-0123391680
+  GCS_BUCKET: zasobnik-tr-github
+  WIF_PROVIDER: projects/833314992090/locations/global/workloadIdentityPools/github-actions/providers/twojstar-backup
+  MAX_BACKUP_BYTES: "2147483648"
+  MAX_BILLABLE_BYTES: "4294967296"
+
+jobs:
+  backup:
+    name: Back up GitHub repositories
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout control repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Create trvny read token
+        id: trvny-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.GPTOMEK_APP_CLIENT_ID }}
+          private-key: ${{ secrets.GPTOMEK_APP_PRIVATE_KEY }}
+          owner: trvny
+          permission-contents: read
+
+      - name: Create twojstar read token
+        id: twojstar-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.GPTOMEK_APP_CLIENT_ID }}
+          private-key: ${{ secrets.GPTOMEK_APP_PRIVATE_KEY }}
+          owner: twojstar
+          permission-contents: read
+
+      - name: Ensure Git LFS is available
+        shell: bash
+        run: |
+          if ! git lfs version; then
+            sudo apt-get update
+            sudo apt-get install -y git-lfs
+          fi
+
+      - name: Build repository archives
+        shell: bash
+        env:
+          TRVNY_TOKEN: ${{ steps.trvny-token.outputs.token }}
+          TWOJSTAR_TOKEN: ${{ steps.twojstar-token.outputs.token }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p backup/github work
+          repos_file="$(mktemp)"
+
+          GH_TOKEN="$TRVNY_TOKEN" gh api --paginate installation/repositories \
+            --jq '.repositories[].full_name' >> "$repos_file"
+          GH_TOKEN="$TWOJSTAR_TOKEN" gh api --paginate installation/repositories \
+            --jq '.repositories[].full_name' >> "$repos_file"
+          sort -u -o "$repos_file" "$repos_file"
+
+          while IFS= read -r repo; do
+            [[ -n "$repo" ]] || continue
+            owner="${repo%%/*}"
+            name="${repo#*/}"
+
+            case "$owner" in
+              trvny) token="$TRVNY_TOKEN" ;;
+              twojstar) token="$TWOJSTAR_TOKEN" ;;
+              *) continue ;;
+            esac
+
+            mirror="work/$owner/$name.git"
+            archive="backup/github/$owner/$name.git.tar.gz"
+            mkdir -p "work/$owner" "backup/github/$owner"
+
+            auth="$(printf 'x-access-token:%s' "$token" | base64 -w0)"
+            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
+              clone --mirror "https://github.com/$repo.git" "$mirror"
+
+            git -C "$mirror" \
+              -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
+              lfs fetch --all
+
+            git -C "$mirror" fsck --full
+            tar -C "work/$owner" -czf "$archive" "$name.git"
+          done < "$repos_file"
+
+          (
+            cd backup/github
+            find . -type f -name '*.tar.gz' -print0 \
+              | sort -z \
+              | xargs -0 sha256sum
+          ) > backup/github/SHA256SUMS
+
+          {
+            printf 'generated_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            printf 'repository_count=%s\n' "$(wc -l < "$repos_file" | tr -d ' ')"
+            printf 'repositories:\n'
+            sed 's/^/  - /' "$repos_file"
+          } > backup/github/MANIFEST.txt
+
+      - name: Guard single backup size
+        shell: bash
+        run: |
+          bytes="$(du -sb backup/github | cut -f1)"
+          if (( bytes > MAX_BACKUP_BYTES )); then
+            echo "::error::Backup is ${bytes} bytes; refusing to exceed the 2 GiB safety cap."
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Verify backup bucket policy
+        shell: bash
+        run: |
+          bucket_json="$RUNNER_TEMP/github-backup-bucket.json"
+          gcloud storage buckets describe "gs://${GCS_BUCKET}" --format=json > "$bucket_json"
+          python - "$bucket_json" <<'PY'
+          import json
+          import sys
+
+          with open(sys.argv[1], encoding="utf-8") as handle:
+              bucket = json.load(handle)
+
+          expected = {
+              "location": "US-CENTRAL1",
+              "default_storage_class": "STANDARD",
+              "public_access_prevention": "enforced",
+              "requester_pays": False,
+              "uniform_bucket_level_access": True,
+          }
+          failures = [
+              f"{key}={bucket.get(key)!r}, expected {value!r}"
+              for key, value in expected.items()
+              if bucket.get(key) != value
+          ]
+          soft_delete = bucket.get("soft_delete_policy", {})
+          retention = soft_delete.get("retentionDurationSeconds")
+          if retention is None:
+              duration = str(soft_delete.get("retentionDuration", ""))
+              retention = duration.removesuffix("s") if duration else None
+          retention = str(retention)
+          if retention != "604800":
+              failures.append(f"soft-delete retention={retention!r}, expected '604800'")
+          versioning_enabled = bucket.get("versioning_enabled")
+          if versioning_enabled is None:
+              versioning_enabled = bucket.get("versioning", {}).get("enabled", False)
+          if versioning_enabled:
+              failures.append("object versioning must be disabled")
+          if failures:
+              raise SystemExit("Bucket policy drift: " + "; ".join(failures))
+          PY
+
+      - name: Guard billed storage headroom
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sum_bucket_bytes() {
+            local soft_deleted="${1:-false}"
+            local args=(--exhaustive)
+            local output status
+            if [[ "$soft_deleted" == "true" ]]; then
+              args+=(--soft-deleted)
+            fi
+
+            set +e
+            output="$(gcloud storage ls -l "gs://${GCS_BUCKET}/**" "${args[@]}" 2>&1)"
+            status=$?
+            set -e
+
+            if (( status != 0 )); then
+              if grep -q 'matched no objects' <<<"$output"; then
+                echo 0
+                return 0
+              fi
+              printf '%s\n' "$output" >&2
+              return "$status"
+            fi
+
+            awk '$1 ~ /^[0-9]+$/ { total += $1 } END { printf "%.0f\n", total + 0 }' <<<"$output"
+          }
+
+          new_bytes="$(du -sb backup/github | cut -f1)"
+          live_bytes="$(sum_bucket_bytes false)"
+          soft_deleted_bytes="$(sum_bucket_bytes true)"
+          projected_bytes=$((new_bytes + live_bytes + soft_deleted_bytes))
+
+          echo "Live bytes: $live_bytes"
+          echo "Soft-deleted bytes: $soft_deleted_bytes"
+          echo "New backup bytes: $new_bytes"
+          echo "Worst-case projected billable bytes: $projected_bytes"
+
+          if (( projected_bytes > MAX_BILLABLE_BYTES )); then
+            echo "::error::Projected billable storage exceeds the 4 GiB safety cap."
+            exit 1
+          fi
+
+      - name: Sync backup to Cloud Storage
+        shell: bash
+        run: |
+          gcloud storage rsync backup/github "gs://${GCS_BUCKET}/github" \
+            --recursive \
+            --delete-unmatched-destination-objects
+
+      - name: Summarize backup
+        shell: bash
+        run: |
+          files="$(find backup/github -type f | wc -l | tr -d ' ')"
+          bytes="$(du -sb backup/github | cut -f1)"
+          {
+            echo '## GitHub backup'
+            echo
+            echo "Files: $files"
+            echo
+            echo "Bytes: $bytes"
+            echo
+            echo "Destination: gs://${GCS_BUCKET}/github/"
+          } >> "$GITHUB_STEP_SUMMARY"
