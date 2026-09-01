@@ -32,7 +32,22 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Check GPTomek authentication
+        id: auth
+        shell: bash
+        env:
+          GPTOMEK_APP_CLIENT_ID: ${{ vars.GPTOMEK_APP_CLIENT_ID }}
+          GPTOMEK_APP_PRIVATE_KEY: ${{ secrets.GPTOMEK_APP_PRIVATE_KEY }}
+        run: |
+          if [[ -n "$GPTOMEK_APP_CLIENT_ID" && -n "$GPTOMEK_APP_PRIVATE_KEY" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::GPTomek private key is unavailable; backing up public repositories only."
+          fi
+
       - name: Create trvny read token
+        if: steps.auth.outputs.configured == 'true'
         id: trvny-token
         uses: actions/create-github-app-token@v3
         with:
@@ -42,6 +57,7 @@ jobs:
           permission-contents: read
 
       - name: Create twojstar read token
+        if: steps.auth.outputs.configured == 'true'
         id: twojstar-token
         uses: actions/create-github-app-token@v3
         with:
@@ -63,17 +79,33 @@ jobs:
         env:
           TRVNY_TOKEN: ${{ steps.trvny-token.outputs.token }}
           TWOJSTAR_TOKEN: ${{ steps.twojstar-token.outputs.token }}
+          PUBLIC_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
           mkdir -p backup/github work
           repos_file="$(mktemp)"
 
-          GH_TOKEN="$TRVNY_TOKEN" gh api --paginate installation/repositories \
-            --jq '.repositories[].full_name' >> "$repos_file"
-          GH_TOKEN="$TWOJSTAR_TOKEN" gh api --paginate installation/repositories \
-            --jq '.repositories[].full_name' >> "$repos_file"
+          if [[ -n "$TRVNY_TOKEN" && -n "$TWOJSTAR_TOKEN" ]]; then
+            auth_mode="gptomek-app"
+            GH_TOKEN="$TRVNY_TOKEN" gh api --paginate installation/repositories \
+              --jq '.repositories[].full_name' >> "$repos_file"
+            GH_TOKEN="$TWOJSTAR_TOKEN" gh api --paginate installation/repositories \
+              --jq '.repositories[].full_name' >> "$repos_file"
+          else
+            auth_mode="public-fallback"
+            GH_TOKEN="$PUBLIC_TOKEN" gh api --paginate \
+              'users/trvny/repos?type=owner&per_page=100' \
+              --jq '.[] | select(.visibility == "public") | .full_name' >> "$repos_file"
+            GH_TOKEN="$PUBLIC_TOKEN" gh api --paginate \
+              'orgs/twojstar/repos?type=public&per_page=100' \
+              --jq '.[].full_name' >> "$repos_file"
+          fi
           sort -u -o "$repos_file" "$repos_file"
+          if [[ ! -s "$repos_file" ]]; then
+            echo "::error::Repository discovery returned no repositories."
+            exit 1
+          fi
 
           while IFS= read -r repo; do
             [[ -n "$repo" ]] || continue
@@ -90,13 +122,17 @@ jobs:
             archive="backup/github/$owner/$name.git.tar.gz"
             mkdir -p "work/$owner" "backup/github/$owner"
 
-            auth="$(printf 'x-access-token:%s' "$token" | base64 -w0)"
-            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
-              clone --mirror "https://github.com/$repo.git" "$mirror"
-
-            git -C "$mirror" \
-              -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
-              lfs fetch --all
+            if [[ -n "$token" ]]; then
+              auth="$(printf 'x-access-token:%s' "$token" | base64 -w0)"
+              git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
+                clone --mirror "https://github.com/$repo.git" "$mirror"
+              git -C "$mirror" \
+                -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
+                lfs fetch --all
+            else
+              git clone --mirror "https://github.com/$repo.git" "$mirror"
+              git -C "$mirror" lfs fetch --all
+            fi
 
             git -C "$mirror" fsck --full
             tar -C "work/$owner" -czf "$archive" "$name.git"
@@ -112,6 +148,7 @@ jobs:
           {
             printf 'generated_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             printf 'repository_count=%s\n' "$(wc -l < "$repos_file" | tr -d ' ')"
+            printf 'auth_mode=%s\n' "$auth_mode"
             printf 'repositories:\n'
             sed 's/^/  - /' "$repos_file"
           } > backup/github/MANIFEST.txt
@@ -175,6 +212,86 @@ jobs:
               raise SystemExit("Bucket policy drift: " + "; ".join(failures))
           PY
 
+
+      - name: Merge retained fallback metadata
+        if: steps.auth.outputs.configured != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          scratch="$RUNNER_TEMP/github-backup-retained"
+          mkdir -p "$scratch"
+          current_archives="$scratch/current-archives.txt"
+          remote_archives="$scratch/remote-archives.txt"
+          retained_archives="$scratch/retained-archives.txt"
+          previous_checksums="$scratch/previous-SHA256SUMS"
+          retained_checksums="$scratch/retained-SHA256SUMS"
+
+          find backup/github -type f -name '*.tar.gz' -printf '%P\n' \
+            | sort -u > "$current_archives"
+
+          set +e
+          remote_output="$(gcloud storage ls "gs://${GCS_BUCKET}/github/**/*.tar.gz" 2>&1)"
+          remote_status=$?
+          set -e
+          if (( remote_status == 0 )); then
+            printf '%s\n' "$remote_output" \
+              | sed "s#^gs://${GCS_BUCKET}/github/##" \
+              | sed '/^$/d' \
+              | sort -u > "$remote_archives"
+          elif grep -q 'matched no objects' <<<"$remote_output"; then
+            : > "$remote_archives"
+          else
+            printf '%s\n' "$remote_output" >&2
+            exit "$remote_status"
+          fi
+
+          comm -23 "$remote_archives" "$current_archives" > "$retained_archives"
+          : > "$retained_checksums"
+
+          if [[ -s "$retained_archives" ]]; then
+            if ! gcloud storage cp \
+              "gs://${GCS_BUCKET}/github/SHA256SUMS" "$previous_checksums" >/dev/null 2>&1; then
+              echo "::error::Retained archives exist but the previous SHA256SUMS is unavailable."
+              exit 1
+            fi
+
+            while IFS= read -r archive; do
+              checksum_line="$(awk -v target="$archive" '
+                {
+                  path = $2
+                  sub(/\r$/, "", path)
+                  sub(/^\.\//, "", path)
+                  if (path == target) { sub(/\r$/, ""); print; exit }
+                }
+              ' "$previous_checksums")"
+              if [[ -z "$checksum_line" ]]; then
+                echo "::error::Missing retained checksum for $archive."
+                exit 1
+              fi
+              printf '%s\n' "$checksum_line" >> "$retained_checksums"
+            done < "$retained_archives"
+          fi
+
+          cat "$retained_checksums" backup/github/SHA256SUMS \
+            | sort -k2,2 > "$scratch/SHA256SUMS"
+          cp "$scratch/SHA256SUMS" backup/github/SHA256SUMS
+
+          repos="$scratch/repositories.txt"
+          sed -n 's/^  - //p' backup/github/MANIFEST.txt > "$repos"
+          sed 's/\.git\.tar\.gz$//' "$retained_archives" >> "$repos"
+          sort -u -o "$repos" "$repos"
+          generated_at="$(sed -n 's/^generated_at=//p' backup/github/MANIFEST.txt | head -n 1)"
+
+          {
+            printf 'generated_at=%s\n' "$generated_at"
+            printf 'repository_count=%s\n' "$(wc -l < "$repos" | tr -d ' ')"
+            printf 'auth_mode=public-fallback\n'
+            printf 'metadata_scope=live-archive-union\n'
+            printf 'repositories:\n'
+            sed 's/^/  - /' "$repos"
+          } > backup/github/MANIFEST.txt
+
       - name: Guard billed storage headroom
         shell: bash
         run: |
@@ -222,10 +339,47 @@ jobs:
 
       - name: Sync backup to Cloud Storage
         shell: bash
+        env:
+          FULL_BACKUP: ${{ steps.auth.outputs.configured }}
         run: |
-          gcloud storage rsync backup/github "gs://${GCS_BUCKET}/github" \
-            --recursive \
-            --delete-unmatched-destination-objects
+          if [[ "$FULL_BACKUP" == "true" ]]; then
+            gcloud storage rsync backup/github "gs://${GCS_BUCKET}/github" \
+              --recursive \
+              --delete-unmatched-destination-objects
+          else
+            echo "::notice::Public fallback is non-destructive; existing private archives are preserved."
+            gcloud storage rsync backup/github "gs://${GCS_BUCKET}/github" --recursive
+          fi
+
+
+      - name: Verify live backup catalog
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          scratch="$RUNNER_TEMP/github-backup-catalog"
+          mkdir -p "$scratch"
+          remote="$scratch/remote.txt"
+          checksums="$scratch/checksums.txt"
+          manifest="$scratch/manifest.txt"
+
+          gcloud storage ls "gs://${GCS_BUCKET}/github/**/*.tar.gz" \
+            | sed "s#^gs://${GCS_BUCKET}/github/##" \
+            | sort -u > "$remote"
+          awk '{ path = $2; sub(/\r$/, "", path); sub(/^\.\//, "", path); print path }' backup/github/SHA256SUMS \
+            | sort -u > "$checksums"
+          sed -n 's/^  - //p' backup/github/MANIFEST.txt \
+            | sed 's/$/.git.tar.gz/' \
+            | sort -u > "$manifest"
+
+          if ! diff -u "$remote" "$checksums"; then
+            echo "::error::SHA256SUMS does not match the live archive set."
+            exit 1
+          fi
+          if ! diff -u "$remote" "$manifest"; then
+            echo "::error::MANIFEST.txt does not match the live archive set."
+            exit 1
+          fi
 
       - name: Summarize backup
         shell: bash
