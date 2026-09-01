@@ -134,4 +134,3 @@ jobs:
             echo
             echo "Destination: gs://${GCS_BUCKET}/github/"
           } >> "$GITHUB_STEP_SUMMARY"
-
