@@ -1,0 +1,28 @@
+name: Migration Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Repository to audit after transfer (owner/name)
+        required: true
+        default: twojstar/Autka
+      legacy_owner:
+        description: Previous repository owner
+        required: true
+        default: trvny
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Audit migrated repository
+        env:
+          TARGET_REPO: ${{ inputs.repository }}
+          LEGACY_OWNER: ${{ inputs.legacy_owner }}
+          AUDIT_GH_TOKEN: ${{ secrets.AUDIT_GH_TOKEN }}
+        run: node .github/scripts/migration-audit.cjs
