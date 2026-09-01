@@ -19,6 +19,7 @@ env:
   GCS_BUCKET: zasobnik-tr-github
   WIF_PROVIDER: projects/833314992090/locations/global/workloadIdentityPools/github-actions/providers/twojstar-backup
   MAX_BACKUP_BYTES: "2147483648"
+  MAX_BILLABLE_BYTES: "4294967296"
 
 jobs:
   backup:
@@ -115,7 +116,7 @@ jobs:
             sed 's/^/  - /' "$repos_file"
           } > backup/github/MANIFEST.txt
 
-      - name: Guard Free Tier headroom
+      - name: Guard single backup size
         shell: bash
         run: |
           bytes="$(du -sb backup/github | cut -f1)"
@@ -163,6 +164,37 @@ jobs:
           if failures:
               raise SystemExit("Bucket policy drift: " + "; ".join(failures))
           PY
+
+      - name: Guard billed storage headroom
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sum_bucket_bytes() {
+            local soft_deleted="${1:-false}"
+            local args=()
+            if [[ "$soft_deleted" == "true" ]]; then
+              args+=(--soft-deleted)
+            fi
+            {
+              gcloud storage ls -l "gs://${GCS_BUCKET}/**" "${args[@]}" 2>/dev/null || true
+            } | awk '$1 ~ /^[0-9]+$/ { total += $1 } END { printf "%.0f\n", total + 0 }'
+          }
+
+          new_bytes="$(du -sb backup/github | cut -f1)"
+          live_bytes="$(sum_bucket_bytes false)"
+          soft_deleted_bytes="$(sum_bucket_bytes true)"
+          projected_bytes=$((new_bytes + live_bytes + soft_deleted_bytes))
+
+          echo "Live bytes: $live_bytes"
+          echo "Soft-deleted bytes: $soft_deleted_bytes"
+          echo "New backup bytes: $new_bytes"
+          echo "Worst-case projected billable bytes: $projected_bytes"
+
+          if (( projected_bytes > MAX_BILLABLE_BYTES )); then
+            echo "::error::Projected billable storage exceeds the 4 GiB safety cap."
+            exit 1
+          fi
 
       - name: Sync backup to Cloud Storage
         shell: bash
