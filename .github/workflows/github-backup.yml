@@ -49,6 +49,14 @@ jobs:
           owner: twojstar
           permission-contents: read
 
+      - name: Ensure Git LFS is available
+        shell: bash
+        run: |
+          if ! git lfs version; then
+            sudo apt-get update
+            sudo apt-get install -y git-lfs
+          fi
+
       - name: Build repository archives
         shell: bash
         env:
@@ -85,21 +93,20 @@ jobs:
             git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
               clone --mirror "https://github.com/$repo.git" "$mirror"
 
-            git -C "$mirror" config \
-              http.https://github.com/.extraheader "AUTHORIZATION: basic $auth"
-            if git lfs version >/dev/null 2>&1; then
-              git -C "$mirror" lfs fetch --all
-            fi
-            git -C "$mirror" config --unset-all \
-              http.https://github.com/.extraheader || true
+            git -C "$mirror" \
+              -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
+              lfs fetch --all
 
             git -C "$mirror" fsck --full
             tar -C "work/$owner" -czf "$archive" "$name.git"
           done < "$repos_file"
 
-          (\n            cd backup/github\n            find . -type f -name '*.tar.gz' -print0 \
+          (
+            cd backup/github
+            find . -type f -name '*.tar.gz' -print0 \
               | sort -z \
-              | xargs -0 sha256sum\n          ) > backup/github/SHA256SUMS
+              | xargs -0 sha256sum
+          ) > backup/github/SHA256SUMS
 
           {
             printf 'generated_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -125,6 +132,37 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v3.0.1
+
+      - name: Verify backup bucket policy
+        shell: bash
+        run: |
+          bucket_json="$RUNNER_TEMP/github-backup-bucket.json"
+          gcloud storage buckets describe "gs://${GCS_BUCKET}" --format=json > "$bucket_json"
+          python - "$bucket_json" <<'PY'
+          import json
+          import sys
+
+          with open(sys.argv[1], encoding="utf-8") as handle:
+              bucket = json.load(handle)
+
+          expected = {
+              "location": "US-CENTRAL1",
+              "default_storage_class": "STANDARD",
+              "public_access_prevention": "enforced",
+              "requester_pays": False,
+              "uniform_bucket_level_access": True,
+          }
+          failures = [
+              f"{key}={bucket.get(key)!r}, expected {value!r}"
+              for key, value in expected.items()
+              if bucket.get(key) != value
+          ]
+          retention = str(bucket.get("soft_delete_policy", {}).get("retentionDurationSeconds"))
+          if retention != "604800":
+              failures.append(f"soft-delete retention={retention!r}, expected '604800'")
+          if failures:
+              raise SystemExit("Bucket policy drift: " + "; ".join(failures))
+          PY
 
       - name: Sync backup to Cloud Storage
         shell: bash
