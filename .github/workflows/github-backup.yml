@@ -260,8 +260,9 @@ jobs:
               checksum_line="$(awk -v target="$archive" '
                 {
                   path = $2
+                  sub(/\r$/, "", path)
                   sub(/^\.\//, "", path)
-                  if (path == target) { print; exit }
+                  if (path == target) { sub(/\r$/, ""); print; exit }
                 }
               ' "$previous_checksums")"
               if [[ -z "$checksum_line" ]]; then
@@ -365,7 +366,7 @@ jobs:
           gcloud storage ls "gs://${GCS_BUCKET}/github/**/*.tar.gz" \
             | sed "s#^gs://${GCS_BUCKET}/github/##" \
             | sort -u > "$remote"
-          awk '{ path = $2; sub(/^\.\//, "", path); print path }' backup/github/SHA256SUMS \
+          awk '{ path = $2; sub(/\r$/, "", path); sub(/^\.\//, "", path); print path }' backup/github/SHA256SUMS \
             | sort -u > "$checksums"
           sed -n 's/^  - //p' backup/github/MANIFEST.txt \
             | sed 's/$/.git.tar.gz/' \
