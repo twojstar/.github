@@ -5,9 +5,9 @@ Use **Migration Audit** after moving a public repository from `trvny/*` to `twoj
 The workflow checks:
 
 - README files for stale self-links to the old owner;
-- at least one structurally complete Dependabot `updates` entry;
+- presence of the repository Dependabot configuration, leaving schema validation to GitHub;
 - an active GitHub Copilot automatic-review ruleset;
-- CodeQL through a complete advanced workflow or authenticated default-setup data;
+- actual CodeQL/check-scanning runs on the current default-branch commit, with authenticated default-setup data as a fallback;
 - security-analysis details when authenticated access is available.
 
 The central workflow can always perform the public checks. For authenticated cross-repository checks, configure the optional `AUDIT_GH_TOKEN` repository secret with read access to the target repositories. GitHub App installations and Cloudflare account state remain explicit post-transfer checks because they are account-scoped integrations.

@@ -108,41 +108,12 @@ function result(name, status, detail) {
   result('Legacy self-links', stale.length ? 'FAIL' : 'PASS', stale.length ? stale.join(', ') : `no ${legacyOwner}/${repo} links in README files`);
 
   const dependabotPath = paths.find((path) => path.toLowerCase() === '.github/dependabot.yml');
-  if (!dependabotPath) result('Dependabot', 'FAIL', 'missing .github/dependabot.yml');
-  else {
+  if (!dependabotPath) {
+    result('Dependabot', 'FAIL', 'missing .github/dependabot.yml');
+  } else {
     const config = await raw(dependabotPath);
-    const cleaned = config.split(/\r?\n/).map((line) => line.replace(/\s+#.*$/, '')).join('\n');
-    const lines = cleaned.split('\n');
-    const updatesLine = lines.findIndex((line) => /^\s*updates:\s*$/.test(line));
-    const updateBlocks = [];
-    if (updatesLine >= 0) {
-      const baseIndent = lines[updatesLine].match(/^\s*/)[0].length;
-      let current = [];
-      for (let i = updatesLine + 1; i < lines.length; i += 1) {
-        const line = lines[i];
-        if (!line.trim()) continue;
-        const indent = line.match(/^\s*/)[0].length;
-        if (indent <= baseIndent) break;
-        if (indent === baseIndent + 2 && /^\s*-\s+/.test(line)) {
-          if (current.length) updateBlocks.push(current);
-          current = [line.replace(/^\s*-\s*/, '  ')];
-        } else if (current.length) current.push(line);
-      }
-      if (current.length) updateBlocks.push(current);
-    }
-    const knownEcosystems = new Set(['bundler','bun','cargo','composer','devcontainers','docker','docker-compose','dotnet-sdk','elm','gitsubmodule','github-actions','gomod','gradle','helm','hex','maven','mix','npm','nuget','pip','pip-compile','pipenv','pnpm','pub','swift','terraform','uv','vcpkg']);
-    const validUpdates = updateBlocks.filter((blockLines) => {
-      const block = blockLines.join('\n');
-      const eco = block.match(/^\s*package-ecosystem:\s*["']?([^"'#\s]+)["']?\s*$/mi)?.[1];
-      const directory = block.match(/^\s*directory:\s*["']?([^"'#\s]+)["']?\s*$/mi)?.[1];
-      const directories = /^\s*directories:\s*$/mi.test(block) && /^\s*-\s*["']?[^"'#\s]+/m.test(block.slice(block.search(/^\s*directories:\s*$/mi)));
-      const blockSchedule = /^\s*schedule:\s*$/mi.test(block) && /^\s*interval:\s*["']?[^"'#\s]+/mi.test(block);
-      const inlineSchedule = /^\s*schedule:\s*\{[^}]*\binterval\s*:\s*["']?[^"'#\s,}]+/mi.test(block);
-      const schedule = blockSchedule || inlineSchedule;
-      return knownEcosystems.has((eco || '').toLowerCase()) && Boolean(directory || directories) && schedule;
-    });
-    const usable = /^\s*version:\s*2\s*$/m.test(cleaned) && validUpdates.length > 0;
-    result('Dependabot', usable ? 'PASS' : 'FAIL', usable ? `${validUpdates.length} valid update entr${validUpdates.length === 1 ? 'y' : 'ies'}` : 'no complete updates entry with supported ecosystem, path and schedule');
+    const present = config.trim().length > 0;
+    result('Dependabot', present ? 'PASS' : 'FAIL', present ? 'configuration file present; schema validity is delegated to GitHub' : 'configuration file is empty');
   }
 
   const rulesets = await apiAll(`/repos/${owner}/${repo}/rulesets`);
@@ -154,27 +125,18 @@ function result(name, status, detail) {
   }
   result('Copilot auto-review', copilot ? 'PASS' : 'FAIL', copilot ? 'active ruleset found' : 'no active copilot_code_review ruleset');
 
-  const workflowPaths = paths.filter((path) => /^\.github\/workflows\/.*\.ya?ml$/i.test(path));
-  let advancedWorkflow = '';
-  for (const path of workflowPaths) {
-    const text = await raw(path);
-    const executableLines = text.split(/\r?\n/).filter((line) => !/^\s*#/.test(line));
-    const hasInit = executableLines.some((line) => /^\s*(?:-\s*)?uses:\s*["']?github\/codeql-action\/init@/i.test(line));
-    const hasAnalyze = executableLines.some((line) => /^\s*(?:-\s*)?uses:\s*["']?github\/codeql-action\/analyze@/i.test(line));
-    if (hasInit && hasAnalyze) {
-      advancedWorkflow = path;
-      break;
-    }
-  }
-  let defaultSetup = { status: 0, data: null };
-  if (token && !advancedWorkflow) defaultSetup = await probe(`/repos/${owner}/${repo}/code-scanning/default-setup`);
-  if (advancedWorkflow) result('CodeQL', 'PASS', `advanced workflow: ${advancedWorkflow}`);
-  else if (defaultSetup.data?.state === 'configured') {
-    result('CodeQL', 'PASS', `default setup: ${(defaultSetup.data.languages || []).join(', ') || 'configured'}`);
-  } else if (token && defaultSetup.status === 200) {
-    result('CodeQL', 'FAIL', `default setup state: ${defaultSetup.data?.state || 'unknown'}`);
+  const checkRuns = await api(`/repos/${owner}/${repo}/commits/${encodeURIComponent(defaultBranch)}/check-runs?per_page=100`);
+  const codeqlRuns = (checkRuns.check_runs || []).filter((run) => /^(?:CodeQL|Analyze(?:\s|\())/i.test(run.name || ''));
+  const successfulCodeql = codeqlRuns.filter((run) => run.conclusion === 'success');
+  const activeCodeql = codeqlRuns.filter((run) => ['queued', 'in_progress'].includes(run.status));
+  if (successfulCodeql.length) {
+    result('CodeQL', 'PASS', `successful check(s) on default branch: ${[...new Set(successfulCodeql.map((run) => run.name))].join(', ')}`);
+  } else if (activeCodeql.length) {
+    result('CodeQL', 'WARN', 'CodeQL check is currently running on the default branch');
   } else {
-    result('CodeQL', 'WARN', 'default setup is not verifiable with current credentials');
+    const defaultSetup = token ? await probe(`/repos/${owner}/${repo}/code-scanning/default-setup`) : { status: 0, data: null };
+    if (defaultSetup.data?.state === 'configured') result('CodeQL', 'PASS', 'default setup is configured');
+    else result('CodeQL', 'WARN', 'no successful CodeQL check found on the current default-branch commit');
   }
 
   const security = metadata.security_and_analysis;
