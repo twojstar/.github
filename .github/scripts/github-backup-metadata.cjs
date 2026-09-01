@@ -70,7 +70,7 @@ async function requestJson(url, options = {}) {
     const body = await response.text();
     if (response.ok) {
       try {
-        return { data: body ? JSON.parse(body) : null, headers: response.headers };
+        return { data: body ? JSON.parse(body) : null, headers: response.headers, status: response.status };
       } catch (error) {
         if (attempt + 1 >= maxAttempts) {
           throw new Error(`Invalid JSON from ${url}: ${error.message}`);
@@ -101,15 +101,16 @@ async function requestJson(url, options = {}) {
   throw new Error(`GitHub request retries exhausted for ${url}`);
 }
 
-async function paginateRest(endpoint, params = {}) {
+async function paginateRest(endpoint, params = {}, { allowNoContent = false } = {}) {
   const items = [];
   for (let page = 1; ; page += 1) {
     const url = new URL(`${API}${endpoint}`);
     for (const [key, value] of Object.entries({ ...params, per_page: 100, page })) {
       url.searchParams.set(key, String(value));
     }
-    const { data } = await requestJson(url);
-    if (!Array.isArray(data)) throw new Error(`Expected array from ${endpoint}`);
+    const { data, status } = await requestJson(url);
+    if (status === 204 && allowNoContent) break;
+    if (!Array.isArray(data)) throw new Error(`Expected array from ${endpoint}, got HTTP ${status}`);
     items.push(...data);
     if (data.length < 100) break;
   }
@@ -273,7 +274,11 @@ async function main() {
     direction: 'asc',
   });
   const issueEvents = await paginateRest(`/repos/${owner}/${repo}/issues/events`);
-  const contributors = await paginateRest(`/repos/${owner}/${repo}/contributors`, { anon: '1' });
+  const contributors = await paginateRest(
+    `/repos/${owner}/${repo}/contributors`,
+    { anon: '1' },
+    { allowNoContent: true },
+  );
   const pullReviews = await fetchPullReviews();
   const gitAuthors = gitContributors();
 
