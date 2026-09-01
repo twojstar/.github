@@ -136,7 +136,9 @@ function result(name, status, detail) {
       const eco = block.match(/^\s*package-ecosystem:\s*["']?([^"'#\s]+)["']?\s*$/mi)?.[1];
       const directory = block.match(/^\s*directory:\s*["']?([^"'#\s]+)["']?\s*$/mi)?.[1];
       const directories = /^\s*directories:\s*$/mi.test(block) && /^\s*-\s*["']?[^"'#\s]+/m.test(block.slice(block.search(/^\s*directories:\s*$/mi)));
-      const schedule = /^\s*schedule:\s*$/mi.test(block) && /^\s*interval:\s*["']?[^"'#\s]+/mi.test(block);
+      const blockSchedule = /^\s*schedule:\s*$/mi.test(block) && /^\s*interval:\s*["']?[^"'#\s]+/mi.test(block);
+      const inlineSchedule = /^\s*schedule:\s*\{[^}]*\binterval\s*:\s*["']?[^"'#\s,}]+/mi.test(block);
+      const schedule = blockSchedule || inlineSchedule;
       return knownEcosystems.has((eco || '').toLowerCase()) && Boolean(directory || directories) && schedule;
     });
     const usable = /^\s*version:\s*2\s*$/m.test(cleaned) && validUpdates.length > 0;
