@@ -153,16 +153,28 @@ function retryableGraphqlErrors(errors) {
   );
 }
 
-function graphqlRetryDelayMs(payload, attempt) {
-  const resetAt = Date.parse(payload?.data?.rateLimit?.resetAt ?? '');
-  if (Number.isFinite(resetAt)) return Math.max(resetAt - Date.now() + 1000, 1000);
-  return retryDelayMs(null, attempt);
+function graphqlRetryDelayMs(payload, responseHeaders, attempt) {
+  const remaining = Number(payload?.data?.rateLimit?.remaining);
+  const headerRemaining = responseHeaders?.get('x-ratelimit-remaining');
+  const primaryExhausted = remaining === 0 || headerRemaining === '0';
+
+  if (primaryExhausted) {
+    const resetAt = Date.parse(payload?.data?.rateLimit?.resetAt ?? '');
+    if (Number.isFinite(resetAt)) return Math.max(resetAt - Date.now() + 1000, 1000);
+    return retryDelayMs({ headers: responseHeaders }, attempt);
+  }
+
+  if (responseHeaders?.get('retry-after')) {
+    return retryDelayMs({ headers: responseHeaders }, attempt);
+  }
+
+  return Math.min(60_000 * 2 ** attempt, 5 * 60_000);
 }
 
 async function requestGraphql(query, variables) {
   const deadline = Date.now() + RETRY_BUDGET_MS;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
-    const { data: payload } = await requestJson(
+    const { data: payload, headers: responseHeaders } = await requestJson(
       `${API}/graphql`,
       {
         method: 'POST',
@@ -178,7 +190,7 @@ async function requestGraphql(query, variables) {
     }
 
     await retryPause(
-      graphqlRetryDelayMs(payload, attempt),
+      graphqlRetryDelayMs(payload, responseHeaders, attempt),
       deadline,
       `GitHub GraphQL throttled for ${repository}`,
     );
