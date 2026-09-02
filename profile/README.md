@@ -7,24 +7,12 @@
 
 **Open source under one roof: apps, feeds, media, automation, and small machines that somehow became infrastructure.**
 
-[![organization](https://img.shields.io/badge/GitHub-organization-181717?style=for-the-badge&logo=github)](https://github.com/twojstar)
+[![organization](https://img.shields.io/badge/twojstar-181717?style=for-the-badge&logo=github)](https://github.com/twojstar)
 [![Cloudflare](https://workers.cloudflare.com/built-with-cloudflare.svg)](https://trfny.com)
 
-<sub>built by trvny · bots on payroll · migration without ceremonial forklifts</sub>
+<sub>built by trvny · bots on payroll</sub>
 
 </div>
-
----
-
-## 🔀 Open pull requests
-
-<!--OPEN_PRS:START-->
-| Repository | PR | Title | Author | State | Updated |
-| --- | ---: | --- | --- | --- | --- |
-| twojstar/.github | [#11](https://github.com/twojstar/.github/pull/11) | feat: back up GitHub collaboration metadata | @trvny | ready | 2026-09-01 |
-| twojstar/llmbench | [#19](https://github.com/twojstar/llmbench/pull/19) | deps: bump the gradle-minor-patch group across 1 directory with 7 updates | @dependabot[bot] | ready | 2026-09-01 |
-| twojstar/llmbench | [#21](https://github.com/twojstar/llmbench/pull/21) | feat: show web chat activity status | @trvny | ready | 2026-09-01 |
-<!--OPEN_PRS:END-->
 
 ## 🧭 Project map
 
@@ -39,15 +27,21 @@
 | 🔊 **WAM Bridge** | [`twojstar/wambridge`](https://github.com/twojstar/wambridge) | Samsung Wireless Audio Multiroom bridge and foobar2000 output |
 | 🧰 **Workshop** | [`trvny/trvny`](https://github.com/trvny/trvny) | benches, GitHub Apps, experiments, Workers and the cupboard where the cables live |
 
-Repositories move here gradually. Until a repository is transferred, its `trvny/*` location remains canonical and GitHub redirects will preserve old links after migration.
+<div align="center">
+<sub>consolidation over fragmentation · po kolei, na spokojnie</sub>
+</div>
 
-## 🤖 Automation crew
+---
 
-**Kanarek Companion** watches PR readiness, **GPTomek** handles bot-authored GitHub work, and **Claudiusz69** joins the review bench. Their organization access is deliberately repository-scoped rather than blanket-wide.
+## 🔀 Open pull requests
 
-## 🗄️ Drawers
-
-The drawers below are refreshed by organization upkeep from the maintained source in `trvny/trvny`, so the public profile stays alive without maintaining a second quote/news machine.
+<!--OPEN_PRS:START-->
+| Repository | PR | Title | Author | State | Updated |
+| --- | ---: | --- | --- | --- | --- |
+| twojstar/.github | [#11](https://github.com/twojstar/.github/pull/11) | feat: back up GitHub collaboration metadata | @trvny | ready | 2026-09-01 |
+| twojstar/llmbench | [#19](https://github.com/twojstar/llmbench/pull/19) | deps: bump the gradle-minor-patch group across 1 directory with 7 updates | @dependabot[bot] | ready | 2026-09-01 |
+| twojstar/llmbench | [#21](https://github.com/twojstar/llmbench/pull/21) | feat: show web chat activity status | @trvny | ready | 2026-09-01 |
+<!--OPEN_PRS:END-->
 
 ### 💬 Quote from the drawer
 
@@ -67,9 +61,3 @@ The drawers below are refreshed by organization upkeep from the maintained sourc
 - [Urban Word of the Day — board chow](https://www.urbandictionary.com/define.php?term=board%20chow&defid=2568411)
 - [Operationalizing AI Sovereignty Through Agency, Interoperability, and Openness](https://carnegieendowment.org/research/2026/09/operationalizing-ai-sovereignty-through-agency-interoperability-and-openness)
 <!--README_FEED:END-->
-
----
-
-<div align="center">
-<sub>consolidation over fragmentation · po kolei, na spokojnie</sub>
-</div>
