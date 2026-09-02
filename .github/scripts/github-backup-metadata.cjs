@@ -81,7 +81,20 @@ async function requestJson(url, options = {}, { deadline = Date.now() + RETRY_BU
       continue;
     }
 
-    const body = await response.text();
+    let body;
+    try {
+      body = await response.text();
+    } catch (error) {
+      if (attempt + 1 >= MAX_ATTEMPTS) {
+        throw new Error(`GitHub response body read failed for ${url}: ${error.message}`);
+      }
+      await retryPause(
+        retryDelayMs(response, attempt),
+        deadline,
+        `GitHub response body read failure for ${url}`,
+      );
+      continue;
+    }
     if (response.ok) {
       try {
         return {
