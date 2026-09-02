@@ -12,6 +12,8 @@ concurrency:
 
 permissions:
   contents: read
+  issues: read
+  pull-requests: read
   id-token: write
 
 env:
@@ -55,6 +57,8 @@ jobs:
           private-key: ${{ secrets.GPTOMEK_APP_PRIVATE_KEY }}
           owner: trvny
           permission-contents: read
+          permission-issues: read
+          permission-pull-requests: read
 
       - name: Create twojstar read token
         if: steps.auth.outputs.configured == 'true'
@@ -65,6 +69,8 @@ jobs:
           private-key: ${{ secrets.GPTOMEK_APP_PRIVATE_KEY }}
           owner: twojstar
           permission-contents: read
+          permission-issues: read
+          permission-pull-requests: read
 
       - name: Ensure Git LFS is available
         shell: bash
@@ -120,7 +126,13 @@ jobs:
 
             mirror="work/$owner/$name.git"
             archive="backup/github/$owner/$name.git.tar.gz"
-            mkdir -p "work/$owner" "backup/github/$owner"
+            metadata_dir="work/github-metadata/$owner/$name"
+            metadata_archive="backup/github/metadata/$owner/$name.github-metadata.tar.gz"
+            mkdir -p \
+              "work/$owner" \
+              "backup/github/$owner" \
+              "work/github-metadata/$owner" \
+              "backup/github/metadata/$owner"
 
             if [[ -n "$token" ]]; then
               auth="$(printf 'x-access-token:%s' "$token" | base64 -w0)"
@@ -136,6 +148,16 @@ jobs:
 
             git -C "$mirror" fsck --full
             tar -C "work/$owner" -czf "$archive" "$name.git"
+
+            api_token="$token"
+            if [[ -z "$api_token" ]]; then
+              api_token="$PUBLIC_TOKEN"
+            fi
+            GH_TOKEN="$api_token" GIT_AUTH_TOKEN="$token" node \
+              "$GITHUB_WORKSPACE/.github/scripts/github-backup-metadata.cjs" \
+              "$repo" "$mirror" "$metadata_dir"
+            tar -C "work/github-metadata/$owner" \
+              -czf "$metadata_archive" "$name"
           done < "$repos_file"
 
           (
@@ -145,12 +167,20 @@ jobs:
               | xargs -0 sha256sum
           ) > backup/github/SHA256SUMS
 
+          archives_file="$(mktemp)"
+          find backup/github -type f -name '*.tar.gz' -printf '%P\n' \
+            | sort -u > "$archives_file"
+
           {
             printf 'generated_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             printf 'repository_count=%s\n' "$(wc -l < "$repos_file" | tr -d ' ')"
+            printf 'archive_count=%s\n' "$(wc -l < "$archives_file" | tr -d ' ')"
             printf 'auth_mode=%s\n' "$auth_mode"
+            printf 'metadata_schema_version=2\n'
             printf 'repositories:\n'
             sed 's/^/  - /' "$repos_file"
+            printf 'archives:\n'
+            sed 's/^/  - /' "$archives_file"
           } > backup/github/MANIFEST.txt
 
       - name: Guard single backup size
@@ -278,18 +308,29 @@ jobs:
           cp "$scratch/SHA256SUMS" backup/github/SHA256SUMS
 
           repos="$scratch/repositories.txt"
-          sed -n 's/^  - //p' backup/github/MANIFEST.txt > "$repos"
-          sed 's/\.git\.tar\.gz$//' "$retained_archives" >> "$repos"
+          awk '
+            /^repositories:$/ { section=1; next }
+            /^archives:$/ { section=0 }
+            section && /^  - / { sub(/^  - /, ""); print }
+          ' backup/github/MANIFEST.txt > "$repos"
+          sed -n 's/\.git\.tar\.gz$//p' "$retained_archives" >> "$repos"
           sort -u -o "$repos" "$repos"
+
+          archives="$scratch/archives.txt"
+          cat "$current_archives" "$retained_archives" | sort -u > "$archives"
           generated_at="$(sed -n 's/^generated_at=//p' backup/github/MANIFEST.txt | head -n 1)"
 
           {
             printf 'generated_at=%s\n' "$generated_at"
             printf 'repository_count=%s\n' "$(wc -l < "$repos" | tr -d ' ')"
+            printf 'archive_count=%s\n' "$(wc -l < "$archives" | tr -d ' ')"
             printf 'auth_mode=public-fallback\n'
+            printf 'metadata_schema_version=2\n'
             printf 'metadata_scope=live-archive-union\n'
             printf 'repositories:\n'
             sed 's/^/  - /' "$repos"
+            printf 'archives:\n'
+            sed 's/^/  - /' "$archives"
           } > backup/github/MANIFEST.txt
 
       - name: Guard billed storage headroom
@@ -368,9 +409,11 @@ jobs:
             | sort -u > "$remote"
           awk '{ path = $2; sub(/\r$/, "", path); sub(/^\.\//, "", path); print path }' backup/github/SHA256SUMS \
             | sort -u > "$checksums"
-          sed -n 's/^  - //p' backup/github/MANIFEST.txt \
-            | sed 's/$/.git.tar.gz/' \
-            | sort -u > "$manifest"
+          awk '
+            /^archives:$/ { section=1; next }
+            section && /^  - / { sub(/^  - /, ""); print; next }
+            section { exit }
+          ' backup/github/MANIFEST.txt | sort -u > "$manifest"
 
           if ! diff -u "$remote" "$checksums"; then
             echo "::error::SHA256SUMS does not match the live archive set."
