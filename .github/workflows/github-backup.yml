@@ -436,7 +436,7 @@ jobs:
             fi
 
             set +e
-            output="$(gcloud storage ls -l "gs://${GCS_BUCKET}/**" "${args[@]}" 2>&1)"
+            output="$(gcloud storage ls -l "gs://${GCS_BUCKET}/github/**" "${args[@]}" 2>&1)"
             status=$?
             set -e
 
