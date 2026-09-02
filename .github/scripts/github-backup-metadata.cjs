@@ -68,7 +68,11 @@ async function retryPause(delay, deadline, reason) {
   await sleep(boundedDelay);
 }
 
-async function requestJson(url, options = {}, { deadline = Date.now() + RETRY_BUDGET_MS } = {}) {
+async function requestJson(
+  url,
+  options = {},
+  { deadline = Date.now() + RETRY_BUDGET_MS, retryAccepted = false } = {},
+) {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const remainingMs = deadline - Date.now();
     if (remainingMs <= 0) throw new Error(`GitHub request deadline exceeded for ${url}`);
@@ -100,6 +104,18 @@ async function requestJson(url, options = {}, { deadline = Date.now() + RETRY_BU
     } finally {
       clearTimeout(timeout);
     }
+    if (response.status === 202 && retryAccepted) {
+      if (attempt + 1 >= MAX_ATTEMPTS) {
+        throw new Error(`GitHub request remained HTTP 202 for ${url}`);
+      }
+      const retryAfter = response.headers.get('retry-after');
+      const delay = retryAfter
+        ? retryDelayMs(response, attempt)
+        : Math.min(5000 * 2 ** attempt, 60_000);
+      await retryPause(delay, deadline, `GitHub request still computing for ${url}`);
+      continue;
+    }
+
     if (response.ok) {
       try {
         return {
@@ -208,14 +224,18 @@ async function requestGraphql(query, variables) {
   throw new Error(`GraphQL retries exhausted for ${repository}`);
 }
 
-async function paginateRest(endpoint, params = {}, { allowNoContent = false } = {}) {
+async function paginateRest(
+  endpoint,
+  params = {},
+  { allowNoContent = false, retryAccepted = false } = {},
+) {
   const items = [];
   for (let page = 1; ; page += 1) {
     const url = new URL(`${API}${endpoint}`);
     for (const [key, value] of Object.entries({ ...params, per_page: 100, page })) {
       url.searchParams.set(key, String(value));
     }
-    const { data, status } = await requestJson(url);
+    const { data, status } = await requestJson(url, {}, { retryAccepted });
     if (status === 204 && allowNoContent) break;
     if (!Array.isArray(data)) throw new Error(`Expected array from ${endpoint}, got HTTP ${status}`);
     items.push(...data);
@@ -445,7 +465,7 @@ async function main() {
   const contributors = await paginateRest(
     `/repos/${owner}/${repo}/contributors`,
     { anon: '1' },
-    { allowNoContent: true },
+    { allowNoContent: true, retryAccepted: true },
   );
   const pullReviews = await fetchPullReviews();
   const gitAuthors = gitContributors();
