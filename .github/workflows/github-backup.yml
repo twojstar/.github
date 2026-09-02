@@ -298,6 +298,9 @@ jobs:
           with open(sys.argv[1], encoding="utf-8") as handle:
               bucket = json.load(handle)
 
+          # gcloud omits requester_pays when it is disabled.
+          bucket.setdefault("requester_pays", False)
+
           expected = {
               "location": "US-CENTRAL1",
               "default_storage_class": "STANDARD",
