@@ -179,6 +179,28 @@ jobs:
                 filter_args+=(--path "$filter_path")
               done
               git -C "$mirror" filter-repo "${filter_args[@]}" --invert-paths --force
+
+              lfs_oids="$(mktemp)"
+              git -C "$mirror" lfs ls-files --all --long \
+                | awk '{print $1}' | sort -u > "$lfs_oids"
+              lfs_objects="$mirror/lfs/objects"
+              if [[ -d "$lfs_objects" ]]; then
+                while IFS= read -r -d '' lfs_object; do
+                  oid="$(basename "$lfs_object")"
+                  if ! grep -Fxq "$oid" "$lfs_oids"; then
+                    rm -f "$lfs_object"
+                  fi
+                done < <(find "$lfs_objects" -type f -print0)
+              fi
+              while IFS= read -r oid; do
+                [[ -n "$oid" ]] || continue
+                object="$lfs_objects/${oid:0:2}/${oid:2:2}/$oid"
+                if [[ ! -f "$object" ]]; then
+                  echo "::error::Missing retained LFS object $oid for $repo."
+                  exit 1
+                fi
+              done < "$lfs_oids"
+
               test -s "$mirror/filter-repo/commit-map"
               cp "$mirror/filter-repo/commit-map" \
                 "$metadata_dir/git-rewrite-commit-map.txt"
@@ -202,7 +224,7 @@ jobs:
                 done
               } > "$metadata_dir/GIT_FILTER.txt"
 
-              restore_test="work/restore-test/$owner/$name.git"
+              restore_test="$GITHUB_WORKSPACE/work/restore-test/$owner/$name.git"
               mkdir -p "$(dirname "$restore_test")"
               git init --bare "$restore_test"
               git -C "$mirror" push --mirror "$restore_test"
@@ -235,7 +257,8 @@ jobs:
             printf 'repository_count=%s\n' "$(wc -l < "$repos_file" | tr -d ' ')"
             printf 'archive_count=%s\n' "$(wc -l < "$archives_file" | tr -d ' ')"
             printf 'auth_mode=%s\n' "$auth_mode"
-            printf 'metadata_schema_version=3\n'
+            printf 'metadata_export_schema_current=3\n'
+            printf 'metadata_export_schema_source=per-archive:EXPORT.json\n'
             if [[ -n "$FILTERED_REPOSITORY" ]]; then
               printf 'filtered_git=%s:paths-%s\n' "$FILTERED_REPOSITORY" "${FILTERED_PATHS// /,}"
             fi
@@ -387,7 +410,8 @@ jobs:
             printf 'repository_count=%s\n' "$(wc -l < "$repos" | tr -d ' ')"
             printf 'archive_count=%s\n' "$(wc -l < "$archives" | tr -d ' ')"
             printf 'auth_mode=public-fallback\n'
-            printf 'metadata_schema_version=3\n'
+            printf 'metadata_export_schema_current=3\n'
+            printf 'metadata_export_schema_source=per-archive:EXPORT.json\n'
             if [[ -n "$FILTERED_REPOSITORY" ]]; then
               printf 'filtered_git=%s:paths-%s\n' "$FILTERED_REPOSITORY" "${FILTERED_PATHS// /,}"
             fi
