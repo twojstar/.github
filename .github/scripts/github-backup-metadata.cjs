@@ -19,6 +19,9 @@ if (!repository || !mirrorPath || !outputDir || !repository.includes('/')) usage
 const [owner, repo] = repository.split('/', 2);
 const token = process.env.GH_TOKEN;
 if (!token) throw new Error('GH_TOKEN is required');
+const backupGitFilterPaths = (process.env.BACKUP_GIT_FILTER_PATHS || '')
+  .split(/\s+/)
+  .filter(Boolean);
 
 function headers(extra = {}) {
   return {
@@ -494,15 +497,21 @@ async function main() {
     wiki_refs: wiki.refs,
   };
   writeJson(path.join(outputDir, 'EXPORT.json'), {
-    schema_version: 2,
+    schema_version: 3,
     generated_at: new Date().toISOString(),
     repository,
     counts,
     wiki,
+    git_backup: {
+      strategy: backupGitFilterPaths.length ? 'full-history-filtered-paths' : 'full-mirror',
+      excluded_paths: backupGitFilterPaths,
+      commit_map: backupGitFilterPaths.length ? 'git-rewrite-commit-map.txt' : null,
+      git_contributors_scope: 'unfiltered-source-history',
+    },
     notes: [
       'JSON and JSONL files preserve GitHub API identifiers, authors, timestamps, states, and URLs.',
       'Binary attachments, Actions artifacts, releases, packages, and repository settings are not included.',
-      'git-contributors.json is derived from commit authors in the mirrored Git history.',
+      'git-contributors.json is derived from the unfiltered source mirror before backup-only history filtering.',
       'When GitHub Wiki exists, wiki.git is a verified full Git mirror stored inside this metadata archive.',
     ],
   });
