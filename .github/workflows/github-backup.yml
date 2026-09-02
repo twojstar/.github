@@ -22,6 +22,8 @@ env:
   WIF_PROVIDER: projects/833314992090/locations/global/workloadIdentityPools/github-actions/providers/twojstar-backup
   MAX_BACKUP_BYTES: "2147483648"
   MAX_BILLABLE_BYTES: "4294967296"
+  SHALLOW_REPOSITORY: trvny/feedseek
+  SHALLOW_DEPTH: "50"
 
 jobs:
   backup:
@@ -134,15 +136,20 @@ jobs:
               "work/github-metadata/$owner" \
               "backup/github/metadata/$owner"
 
+            clone_args=(--mirror)
+            if [[ "$repo" == "$SHALLOW_REPOSITORY" ]]; then
+              clone_args+=(--depth "$SHALLOW_DEPTH" --no-single-branch)
+            fi
+
             if [[ -n "$token" ]]; then
               auth="$(printf 'x-access-token:%s' "$token" | base64 -w0)"
               git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
-                clone --mirror "https://github.com/$repo.git" "$mirror"
+                clone "${clone_args[@]}" "https://github.com/$repo.git" "$mirror"
               git -C "$mirror" \
                 -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
                 lfs fetch --all
             else
-              git clone --mirror "https://github.com/$repo.git" "$mirror"
+              git clone "${clone_args[@]}" "https://github.com/$repo.git" "$mirror"
               git -C "$mirror" lfs fetch --all
             fi
 
@@ -177,6 +184,7 @@ jobs:
             printf 'archive_count=%s\n' "$(wc -l < "$archives_file" | tr -d ' ')"
             printf 'auth_mode=%s\n' "$auth_mode"
             printf 'metadata_schema_version=2\n'
+            printf 'shallow_git=%s:depth-%s\n' "$SHALLOW_REPOSITORY" "$SHALLOW_DEPTH"
             printf 'repositories:\n'
             sed 's/^/  - /' "$repos_file"
             printf 'archives:\n'
@@ -326,6 +334,7 @@ jobs:
             printf 'archive_count=%s\n' "$(wc -l < "$archives" | tr -d ' ')"
             printf 'auth_mode=public-fallback\n'
             printf 'metadata_schema_version=2\n'
+            printf 'shallow_git=%s:depth-%s\n' "$SHALLOW_REPOSITORY" "$SHALLOW_DEPTH"
             printf 'metadata_scope=live-archive-union\n'
             printf 'repositories:\n'
             sed 's/^/  - /' "$repos"
@@ -437,4 +446,6 @@ jobs:
             echo "Bytes: $bytes"
             echo
             echo "Destination: gs://${GCS_BUCKET}/github/"
+            echo
+            echo "Shallow Git: ${SHALLOW_REPOSITORY} (depth ${SHALLOW_DEPTH})"
           } >> "$GITHUB_STEP_SUMMARY"
