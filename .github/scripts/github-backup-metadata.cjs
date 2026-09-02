@@ -65,35 +65,35 @@ async function retryPause(delay, deadline, reason) {
 
 async function requestJson(url, options = {}, { deadline = Date.now() + RETRY_BUDGET_MS } = {}) {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) throw new Error(`GitHub request deadline exceeded for ${url}`);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), remainingMs);
     let response;
+    let body;
     try {
       response = await fetch(url, {
         ...options,
         headers: headers(options.headers),
+        signal: controller.signal,
       });
-    } catch (error) {
-      if (attempt + 1 >= MAX_ATTEMPTS) throw error;
-      await retryPause(
-        retryDelayMs(null, attempt),
-        deadline,
-        `GitHub request network failure for ${url}`,
-      );
-      continue;
-    }
-
-    let body;
-    try {
       body = await response.text();
     } catch (error) {
+      if (Date.now() >= deadline) {
+        throw new Error(`GitHub request deadline exceeded for ${url}: ${error.message}`);
+      }
       if (attempt + 1 >= MAX_ATTEMPTS) {
-        throw new Error(`GitHub response body read failed for ${url}: ${error.message}`);
+        throw new Error(`GitHub request/response failed for ${url}: ${error.message}`);
       }
       await retryPause(
-        retryDelayMs(response, attempt),
+        retryDelayMs(response ?? null, attempt),
         deadline,
-        `GitHub response body read failure for ${url}`,
+        `GitHub request/response failure for ${url}`,
       );
       continue;
+    } finally {
+      clearTimeout(timeout);
     }
     if (response.ok) {
       try {
@@ -351,11 +351,18 @@ function backupWiki(repositoryData) {
   });
   if (probe.status !== 0) {
     const detail = `${probe.stdout ?? ''}\n${probe.stderr ?? ''}`.trim();
-    if (/repository not found|not found/i.test(detail)) {
-      const reason = repositoryData.private && !process.env.GIT_AUTH_TOKEN
-        ? 'auth-unavailable'
-        : 'uninitialized';
-      return { enabled: true, backed_up: false, reason, refs: 0 };
+    const gitToken = process.env.GIT_AUTH_TOKEN;
+    const notFound = /repository not found|not found/i.test(detail);
+    const credentialPrompt = /could not read (?:username|password)|terminal prompts disabled|askpass|authentication failed/i.test(detail);
+
+    if (repositoryData.private && !gitToken && (notFound || credentialPrompt)) {
+      return { enabled: true, backed_up: false, reason: 'auth-unavailable', refs: 0 };
+    }
+    if (!repositoryData.private && !gitToken && (notFound || credentialPrompt)) {
+      return { enabled: true, backed_up: false, reason: 'uninitialized', refs: 0 };
+    }
+    if (notFound) {
+      return { enabled: true, backed_up: false, reason: 'uninitialized', refs: 0 };
     }
     throw new Error(`Wiki probe failed for ${repository}: ${detail.slice(0, 1000)}`);
   }
