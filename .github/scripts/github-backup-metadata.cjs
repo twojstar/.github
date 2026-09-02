@@ -320,10 +320,17 @@ async function fetchPullReviews() {
 
 function wikiGitEnvironment() {
   const gitToken = process.env.GIT_AUTH_TOKEN;
-  if (!gitToken) return process.env;
+  const env = {
+    ...process.env,
+    GIT_TERMINAL_PROMPT: '0',
+    GCM_INTERACTIVE: 'Never',
+  };
+  if (process.platform !== 'win32') env.GIT_ASKPASS = '/bin/false';
+  if (!gitToken) return env;
+
   const basic = Buffer.from(`x-access-token:${gitToken}`).toString('base64');
   return {
-    ...process.env,
+    ...env,
     GIT_CONFIG_COUNT: '1',
     GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader',
     GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${basic}`,
@@ -345,7 +352,10 @@ function backupWiki(repositoryData) {
   if (probe.status !== 0) {
     const detail = `${probe.stdout ?? ''}\n${probe.stderr ?? ''}`.trim();
     if (/repository not found|not found/i.test(detail)) {
-      return { enabled: true, backed_up: false, reason: 'uninitialized', refs: 0 };
+      const reason = repositoryData.private && !process.env.GIT_AUTH_TOKEN
+        ? 'auth-unavailable'
+        : 'uninitialized';
+      return { enabled: true, backed_up: false, reason, refs: 0 };
     }
     throw new Error(`Wiki probe failed for ${repository}: ${detail.slice(0, 1000)}`);
   }
