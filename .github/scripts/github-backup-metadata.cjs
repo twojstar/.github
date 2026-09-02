@@ -121,12 +121,13 @@ async function requestJson(url, options = {}, { deadline = Date.now() + RETRY_BU
     }
 
     const primaryRateLimited =
-      response.status === 403 && response.headers.get('x-ratelimit-remaining') === '0';
+      (response.status === 403 || response.status === 429) &&
+      response.headers.get('x-ratelimit-remaining') === '0';
     const secondaryRateLimited =
-      response.status === 429 ||
-      (response.status === 403 &&
-        !primaryRateLimited &&
-        (response.headers.get('retry-after') || /(?:secondary )?rate limit/i.test(body)));
+      !primaryRateLimited &&
+      (response.status === 429 ||
+        (response.status === 403 &&
+          (response.headers.get('retry-after') || /(?:secondary )?rate limit/i.test(body))));
     const retryable = primaryRateLimited || secondaryRateLimited || response.status >= 500;
     if (!retryable || attempt + 1 >= MAX_ATTEMPTS) {
       throw new Error(`${response.status} ${response.statusText} for ${url}: ${body.slice(0, 1000)}`);
