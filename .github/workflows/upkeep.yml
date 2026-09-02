@@ -4,7 +4,7 @@ name: organization upkeep
 on: # yamllint disable-line rule:truthy
   schedule:
     # Run shortly after the legacy trvny upkeep refreshes the source drawers.
-    - cron: "52 21 */2 * *"
+    - cron: "37 21 */2 * *"
   workflow_dispatch:
 
 concurrency:
