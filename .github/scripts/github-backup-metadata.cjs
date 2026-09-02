@@ -52,6 +52,11 @@ function retryDelayMs(response, attempt) {
   return Math.min(1000 * 2 ** attempt, 16_000);
 }
 
+function secondaryRateLimitDelayMs(response, attempt) {
+  if (response?.headers.get('retry-after')) return retryDelayMs(response, attempt);
+  return Math.min(60_000 * 2 ** attempt, 5 * 60_000);
+}
+
 async function retryPause(delay, deadline, reason) {
   const boundedDelay = Math.max(Math.ceil(delay), 1000);
   if (Date.now() + boundedDelay > deadline) {
@@ -115,19 +120,22 @@ async function requestJson(url, options = {}, { deadline = Date.now() + RETRY_BU
       }
     }
 
-    const rateLimited =
+    const primaryRateLimited =
+      response.status === 403 && response.headers.get('x-ratelimit-remaining') === '0';
+    const secondaryRateLimited =
       response.status === 429 ||
       (response.status === 403 &&
-        (response.headers.get('retry-after') ||
-          response.headers.get('x-ratelimit-remaining') === '0' ||
-          /(?:secondary )?rate limit/i.test(body)));
-    const retryable = rateLimited || response.status >= 500;
+        !primaryRateLimited &&
+        (response.headers.get('retry-after') || /(?:secondary )?rate limit/i.test(body)));
+    const retryable = primaryRateLimited || secondaryRateLimited || response.status >= 500;
     if (!retryable || attempt + 1 >= MAX_ATTEMPTS) {
       throw new Error(`${response.status} ${response.statusText} for ${url}: ${body.slice(0, 1000)}`);
     }
 
     await retryPause(
-      retryDelayMs(response, attempt),
+      secondaryRateLimited
+        ? secondaryRateLimitDelayMs(response, attempt)
+        : retryDelayMs(response, attempt),
       deadline,
       `GitHub request ${response.status} for ${url}`,
     );
@@ -168,7 +176,7 @@ function graphqlRetryDelayMs(payload, responseHeaders, attempt) {
     return retryDelayMs({ headers: responseHeaders }, attempt);
   }
 
-  return Math.min(60_000 * 2 ** attempt, 5 * 60_000);
+  return secondaryRateLimitDelayMs({ headers: responseHeaders }, attempt);
 }
 
 async function requestGraphql(query, variables) {
