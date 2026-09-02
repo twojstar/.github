@@ -1,13 +1,13 @@
 <!-- Jak nie wiesz, co wpisać, wpisz „kurde" albo 2137. -->
 
-## Co i po co
+## What
 
-## Jak sprawdzone
+## Why
 
 <!-- Co odpalone, co przeszło, czego nie dało się sprawdzić.
      „Na oko" też jest odpowiedzią — tylko napisz wprost, że na oko. -->
 
-## Zostało
+## How
 
 <!-- Świadome skróty, długi, rzeczy na potem. Puste = nic nie zostało. -->
 
