@@ -18,7 +18,7 @@ permissions:
 
 env:
   GCP_PROJECT_ID: gen-lang-client-0123391680
-  GCS_BUCKET: zasobnik-tr-github
+  GCS_BUCKET: zasobnik-tr
   WIF_PROVIDER: projects/833314992090/locations/global/workloadIdentityPools/github-actions/providers/twojstar-backup
   MAX_BACKUP_BYTES: "2147483648"
   MAX_BILLABLE_BYTES: "4294967296"
