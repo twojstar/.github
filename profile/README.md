@@ -18,7 +18,7 @@
 
 | project | home | what lives there |
 | --- | --- | --- |
-| 🏢 **Organization defaults** | [`.github`](https://github.com/twojstar/.github) | profile, community files, shared upkeep and organization plumbing |
+| 🏢 **Organization defaults** | [`.github`](https://github.com/twojstar/.github) | profile, community files, profile sync and organization plumbing |
 | 🚗 **Autka** | [`twojstar/Autka`](https://github.com/twojstar/Autka) | Android/KMP car-listing aggregator and backend |
 | 🤖 **LlmBench** | [`twojstar/llmbench`](https://github.com/twojstar/llmbench) | Android workspace for account-backed and free-provider LLM access |
 | 🐤 **Kanarek** | [`twojstar/kanarek`](https://github.com/twojstar/kanarek) | RSS/Atom reader, widgets, radio/IPTV and Worker backend |
