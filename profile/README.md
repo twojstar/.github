@@ -51,8 +51,7 @@
 <!--OPEN_PRS:START-->
 | Repository | PR | Title | Author | State | Updated |
 | --- | ---: | --- | --- | --- | --- |
-| twojstar/kanarek | [#64](https://github.com/twojstar/kanarek/pull/64) | Update merge queue configuration | @trvny | ready | 2026-09-03 |
-| twojstar/wambridge | [#139](https://github.com/twojstar/wambridge/pull/139) | chore(deps): bump com.android.application from 9.3.2 to 9.4.0 in /mobile in the gradle group | @dependabot[bot] | ready | 2026-09-03 |
+| twojstar/llmbench | [#43](https://github.com/twojstar/llmbench/pull/43) | feat: bridge Studio profiles into web composers | @trvny | ready | 2026-09-03 |
 <!--OPEN_PRS:END-->
 
 ### 💬 Quote from the drawer
