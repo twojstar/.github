@@ -3,7 +3,7 @@
 <img src="https://github.com/twojstar.png" alt="twójstar" width="128">
 
 # twójstar
-### TWÓJ STARY INCORPORATED™
+## TWÓJ STARY INCORPORATED™
 
 **Open source pod jednym dachem: aplikacje, feedy, multimedia, automatyzacja i małe maszyny, które jakimś cudem stały się infrastrukturą.**
 
@@ -41,7 +41,7 @@
 ### Ja i moje ziomki
 
 <p align="left">
-  <img src="https://github.com/trvny/trvny/blob/main/assets/ziomki.png" width="420">
+  <img src="https://github.com/trvny/trvny/blob/main/assets/ziomki.png" width="420" alt="Ja i moje ziomki">
 </p>
 
 ---
