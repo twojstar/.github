@@ -6,7 +6,39 @@ const QUOTE_START = '<!--STARTS_HERE_QUOTE_README-->';
 const QUOTE_END = '<!--ENDS_HERE_QUOTE_README-->';
 const FEED_START = '<!--README_FEED:START-->';
 const FEED_END = '<!--README_FEED:END-->';
-const TARGET_PATHS = ['README.md', 'profile/README.md'];
+const PROFILE_LOCALES = {
+  'profile/README.md': {
+    repository: 'Repository',
+    title: 'Title',
+    author: 'Author',
+    state: 'State',
+    updated: 'Updated',
+    draft: 'draft',
+    ready: 'ready',
+    empty: 'No open pull requests. 🎉',
+  },
+  'profile/README_pl.md': {
+    repository: 'Repozytorium',
+    title: 'Tytuł',
+    author: 'Autor',
+    state: 'Stan',
+    updated: 'Aktualizacja',
+    draft: 'wersja robocza',
+    ready: 'gotowy',
+    empty: 'Brak otwartych pull requestów. 🎉',
+  },
+  'profile/README_zh.md': {
+    repository: '仓库',
+    title: '标题',
+    author: '作者',
+    state: '状态',
+    updated: '更新',
+    draft: '草稿',
+    ready: '就绪',
+    empty: '没有开放的拉取请求。🎉',
+  },
+};
+const TARGET_PATHS = ['README.md', ...Object.keys(PROFILE_LOCALES)];
 const SOURCE_URL =
   process.env.PROFILE_DRAWER_SOURCE_URL ||
   'https://raw.githubusercontent.com/trvny/trvny/main/README.md';
@@ -36,14 +68,14 @@ function cell(value) {
     .replace(/\|/g, '\\|');
 }
 
-function renderOpenPrTable(rows) {
-  if (rows.length === 0) return 'No open pull requests. 🎉';
+function renderOpenPrTable(rows, labels = PROFILE_LOCALES['profile/README.md']) {
+  if (rows.length === 0) return labels.empty;
   return [
-    '| Repository | PR | Title | Author | State | Updated |',
+    `| ${labels.repository} | PR | ${labels.title} | ${labels.author} | ${labels.state} | ${labels.updated} |`,
     '| --- | ---: | --- | --- | --- | --- |',
     ...rows.map(
       (row) =>
-        `| ${cell(row.repository)} | [#${row.number}](${row.url}) | ${cell(row.title)} | @${cell(row.author)} | ${row.draft ? 'draft' : 'ready'} | ${row.updated.slice(0, 10)} |`,
+        `| ${cell(row.repository)} | [#${row.number}](${row.url}) | ${cell(row.title)} | @${cell(row.author)} | ${row.draft ? labels.draft : labels.ready} | ${row.updated.slice(0, 10)} |`,
     ),
   ].join('\n');
 }
@@ -114,13 +146,16 @@ module.exports = async function syncProfile({ github, context, core }) {
 
   const quote = extractBlock(source, QUOTE_START, QUOTE_END);
   const feed = extractBlock(source, FEED_START, FEED_END);
-  const open = [OPEN_START, renderOpenPrTable(openPrs), OPEN_END].join('\n');
   let changed = false;
 
   for (const [index, target] of targets.entries()) {
     const path = TARGET_PATHS[index];
     let updated = target.content;
-    if (path === 'profile/README.md') {
+    const labels = PROFILE_LOCALES[path];
+    if (labels) {
+      const open = [OPEN_START, renderOpenPrTable(openPrs, labels), OPEN_END].join(
+        '\n',
+      );
       updated = replaceBlock(updated, OPEN_START, OPEN_END, open);
     }
     updated = replaceBlock(updated, QUOTE_START, QUOTE_END, quote);
