@@ -1,6 +1,8 @@
 # .github
 > This repo contains shared community resources that will propagate to all public repositories that don't already have their own resource that fills this purpose. You can learn more about this GitHub feature [here](https://help.github.com/en/articles/creating-a-default-community-health-file-for-your-organization). 
 
+<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=VT323&weight=600&letterSpacing=-95%25&duration=1234&pause=100&color=D718CE&center=true&random=true&width=500&height=150&lines=Co%C5%9B+si%C4%99+popsu%C5%82o+i+nie+by%C5%82o+mnie+s%C5%82ycha%C4%87;KURDE;2137" alt="Typing-SVG" /></a>  
+
 ---
 
 ## 💬 Quote from the drawer
