@@ -3,7 +3,7 @@
 <img src="https://github.com/twojstar.png" alt="twójstar" width="128">
 
 # twójstar
-### TWÓJ STARY INCORPORATED™
+## TWÓJ STARY INCORPORATED™
 
 **把开源项目收进同一个屋檐下：应用、订阅源、媒体、自动化，以及那些不知怎么就长成基础设施的小机器。**
 
@@ -41,7 +41,7 @@
 ### 我和我的伙计们
 
 <p align="left">
-  <img src="https://github.com/trvny/trvny/blob/main/assets/ziomki.png" width="420">
+  <img src="https://github.com/trvny/trvny/blob/main/assets/ziomki.png" width="420" alt="我和我的伙计们">
 </p>
 
 ---
