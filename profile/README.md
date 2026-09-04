@@ -12,6 +12,10 @@
 
 <sub>built by trvny · bots on payroll</sub>
 
+<p align="center">
+  <img src="https://github.com/trvny/trvny/blob/main/assets/132311.gif" width="69%">
+</p>
+
 [Polski](README_pl.md) · **English** · [简体中文](README_zh.md)
 
 [![feedseek](https://img.shields.io/badge/feed-seek-ff7a18?style=for-the-badge&logo=rss&logoColor=white)](https://trvny.github.io/feedseek) [![tvpi](https://img.shields.io/badge/tvpi-IPTV-2563eb?style=for-the-badge&logo=jellyfin&logoColor=white)](https://trfny.com/tv/)
