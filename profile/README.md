@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://github.com/twojstar.png" alt="twójstar" width="128">
+<img src="https://raw.githubusercontent.com/twojstar/.github/main/assets/322703530.webp" alt="twójstar" width="256">
 
 # twójstar
 ## TWÓJ STARY INCORPORATED™
@@ -32,7 +32,8 @@
 | 📡 **Feedseek** | [`trvny/feedseek`](https://github.com/trvny/feedseek) | feed discovery, repair and generation |
 | 📺 **TVPI** | [`trvny/tvpi`](https://github.com/trvny/tvpi) | IPTV tooling, web entry points and Worker bits |
 | 🔊 **WAM Bridge** | [`twojstar/wambridge`](https://github.com/twojstar/wambridge) | Samsung Wireless Audio Multiroom bridge and foobar2000 output |
-| 🧰 **Workshop** | [`trvny/trvny`](https://github.com/trvny/trvny) | benches, GitHub Apps, experiments, Workers and the cupboard where the cables live |
+| 🧰 **Workshop** | [`twojstar/twojstar`](https://github.com/twojstar/twojstar) | Benches, Weather Feed, Feedboard, Xiaomi ADB Tools, Paint.NET ICO and shared rolling releases |
+| 🧪 **Infra lab** | [`trvny/trvny`](https://github.com/trvny/trvny) | GitHub Apps, MCP services, experiments, automation and the cupboard where the cables live |
 
 <div align="center">
 <sub>© trvny · bots on payroll · consolidation over fragmentation · po kolei, na spokojnie</sub>
