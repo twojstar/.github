@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://github.com/twojstar.png" alt="twójstar" width="128">
+<img src="https://raw.githubusercontent.com/twojstar/.github/main/assets/322703530.webp" alt="twójstar" width="256">
 
 # twójstar
 ## TWÓJ STARY INCORPORATED™
@@ -32,7 +32,8 @@
 | 📡 **Feedseek** | [`trvny/feedseek`](https://github.com/trvny/feedseek) | 订阅源发现、修复和生成 |
 | 📺 **TVPI** | [`trvny/tvpi`](https://github.com/trvny/tvpi) | IPTV 工具、Web 入口和 Worker 组件 |
 | 🔊 **WAM Bridge** | [`twojstar/wambridge`](https://github.com/twojstar/wambridge) | Samsung Wireless Audio Multiroom 桥接器和 foobar2000 输出 |
-| 🧰 **工作台** | [`trvny/trvny`](https://github.com/trvny/trvny) | 各类 Bench、GitHub Apps、实验、Workers，以及那只住着一堆线缆的柜子 |
+| 🧰 **工作台** | [`twojstar/twojstar`](https://github.com/twojstar/twojstar) | Benches、Weather Feed、Feedboard、Xiaomi ADB Tools、Paint.NET ICO 和统一滚动发布 |
+| 🧪 **基础设施实验室** | [`trvny/trvny`](https://github.com/trvny/trvny) | GitHub Apps、MCP 服务、实验、自动化，以及那只住着一堆线缆的柜子 |
 
 <div align="center">
 <sub>© trvny · 机器人也领工资 · 整合优先于碎片化 · 一件一件来，慢慢来</sub>
