@@ -10,7 +10,7 @@
 [![organization](https://img.shields.io/badge/twojstar-181717?style=for-the-badge&logo=github)](https://github.com/twojstar)
 [![Cloudflare](https://workers.cloudflare.com/built-with-cloudflare.svg)](https://trfny.com)
 
-<sub>zbudowane przez trvny · boty na liście płac</sub>
+<sub></sub>
 
 **Polski** · [English](README.md) · [简体中文](README_zh.md)
 
@@ -21,7 +21,7 @@
 
 </div>
 
-## 🧭 Mapa projektów
+### 🧭 Mapa projektów
 
 | projekt | dom | co tam mieszka |
 | --- | --- | --- |
@@ -35,7 +35,7 @@
 | 🧰 **Warsztat** | [`trvny/trvny`](https://github.com/trvny/trvny) | benche, GitHub Apps, eksperymenty, Workery i szafka, w której mieszkają kable |
 
 <div align="center">
-<sub>konsolidacja zamiast fragmentacji · po kolei, na spokojnie</sub>
+<sub>© trvny · boty na liście płac · konsolidacja zamiast fragmentacji · po kolei, na spokojnie</sub>
 </div>
 
 ### Ja i moje ziomki
@@ -43,15 +43,19 @@
 <p align="left">
   <img src="https://github.com/trvny/trvny/blob/main/assets/ziomki.png" width="420" alt="Ja i moje ziomki">
 </p>
+<p align="center">
+  <img src="https://github.com/trvny/trvny/blob/main/assets/132311.gif" width="69%">
+</p>
+<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=VT323&weight=600&letterSpacing=-95%25&duration=1234&pause=100&color=D718CE&center=true&random=true&width=500&height=150&lines=Co%C5%9B+si%C4%99+popsu%C5%82o+i+nie+by%C5%82o+mnie+s%C5%82ycha%C4%87;KURDE;2137" alt="Typing-SVG" /></a>
 
 ---
 
-## 🔀 Otwarte pull requesty
+##
+
+### 🔀 Otwarte pull requesty
 
 <!--OPEN_PRS:START-->
-| Repozytorium | PR | Tytuł | Autor | Stan | Aktualizacja |
-| --- | ---: | --- | --- | --- | --- |
-| twojstar/llmbench | [#43](https://github.com/twojstar/llmbench/pull/43) | feat: bridge Studio profiles into web composers | @trvny | gotowy | 2026-09-03 |
+Brak otwartych pull requestów. 🎉
 <!--OPEN_PRS:END-->
 
 ### 💬 Cytat z szuflady
