@@ -10,7 +10,7 @@
 [![organization](https://img.shields.io/badge/twojstar-181717?style=for-the-badge&logo=github)](https://github.com/twojstar)
 [![Cloudflare](https://workers.cloudflare.com/built-with-cloudflare.svg)](https://trfny.com)
 
-<sub>由 trvny 打造 · 机器人也领工资</sub>
+<sub></sub>
 
 [Polski](README_pl.md) · [English](README.md) · **简体中文**
 
@@ -21,7 +21,7 @@
 
 </div>
 
-## 🧭 项目地图
+### 🧭 项目地图
 
 | 项目 | 主页 | 里面有什么 |
 | --- | --- | --- |
@@ -35,7 +35,7 @@
 | 🧰 **工作台** | [`trvny/trvny`](https://github.com/trvny/trvny) | 各类 Bench、GitHub Apps、实验、Workers，以及那只住着一堆线缆的柜子 |
 
 <div align="center">
-<sub>整合优先于碎片化 · 一件一件来，慢慢来</sub>
+<sub>© trvny · 机器人也领工资 · 整合优先于碎片化 · 一件一件来，慢慢来</sub>
 </div>
 
 ### 我和我的伙计们
@@ -43,15 +43,19 @@
 <p align="left">
   <img src="https://github.com/trvny/trvny/blob/main/assets/ziomki.png" width="420" alt="我和我的伙计们">
 </p>
+<p align="center">
+  <img src="https://github.com/trvny/trvny/blob/main/assets/132311.gif" width="69%">
+</p>
+<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=VT323&weight=600&letterSpacing=-95%25&duration=1234&pause=100&color=D718CE&center=true&random=true&width=500&height=150&lines=Co%C5%9B+si%C4%99+popsu%C5%82o+i+nie+by%C5%82o+mnie+s%C5%82ycha%C4%87;KURDE;2137" alt="Typing-SVG" /></a>
 
 ---
 
-## 🔀 开放的拉取请求
+##
+
+### 🔀 开放的拉取请求
 
 <!--OPEN_PRS:START-->
-| 仓库 | PR | 标题 | 作者 | 状态 | 更新 |
-| --- | ---: | --- | --- | --- | --- |
-| twojstar/llmbench | [#43](https://github.com/twojstar/llmbench/pull/43) | feat: bridge Studio profiles into web composers | @trvny | 就绪 | 2026-09-03 |
+没有开放的拉取请求。🎉
 <!--OPEN_PRS:END-->
 
 ### 💬 抽屉里的名言
