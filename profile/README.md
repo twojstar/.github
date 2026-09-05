@@ -55,9 +55,7 @@
 ### 🔀 Open pull requests
 
 <!--OPEN_PRS:START-->
-| Repository | PR | Title | Author | State | Updated |
-| --- | ---: | --- | --- | --- | --- |
-| twojstar/llmbench | [#43](https://github.com/twojstar/llmbench/pull/43) | feat: bridge Studio profiles into web composers | @trvny | ready | 2026-09-03 |
+No open pull requests. 🎉
 <!--OPEN_PRS:END-->
 
 ### 💬 Quote from the drawer
