@@ -4,13 +4,13 @@ message: kurde
 type: software
 authors:
   - name: trvny
-  - name: actions-user
   - name: claude
   - name: chatgpt
   - name: codex
-  - name: chatgpt-codex-connector[bot]
+  - name: actions-user
   - name: github-actions[bot]
   - name: dependabot[bot]
+  - name: chatgpt-codex-connector[bot]
   - name: gptomek[bot]
   - name: claudiusz69[bot]
   - name: devin-ai-integration[bot]
