@@ -3,18 +3,14 @@
 <img src="https://github.com/twojstar.png" alt="twójstar" width="128">
 
 # twójstar
-### TWÓJ STARY INCORPORATED™
+## TWÓJ STARY INCORPORATED™
 
 **Open source under one roof: apps, feeds, media, automation, and small machines that somehow became infrastructure.**
 
 [![organization](https://img.shields.io/badge/twojstar-181717?style=for-the-badge&logo=github)](https://github.com/twojstar)
 [![Cloudflare](https://workers.cloudflare.com/built-with-cloudflare.svg)](https://trfny.com)
 
-<sub>built by trvny · bots on payroll</sub>
-
-<p align="center">
-  <img src="https://github.com/trvny/trvny/blob/main/assets/132311.gif" width="69%">
-</p>
+<sub></sub>
 
 [Polski](README_pl.md) · **English** · [简体中文](README_zh.md)
 
@@ -25,7 +21,7 @@
 
 </div>
 
-## 🧭 Project map
+### 🧭 Project map
 
 | project | home | what lives there |
 | --- | --- | --- |
@@ -39,7 +35,7 @@
 | 🧰 **Workshop** | [`trvny/trvny`](https://github.com/trvny/trvny) | benches, GitHub Apps, experiments, Workers and the cupboard where the cables live |
 
 <div align="center">
-<sub>consolidation over fragmentation · po kolei, na spokojnie</sub>
+<sub>© trvny · bots on payroll · consolidation over fragmentation · po kolei, na spokojnie</sub>
 </div>
 
 ### Ja i moje ziomki
@@ -47,10 +43,16 @@
 <p align="left">
   <img src="https://github.com/trvny/trvny/blob/main/assets/ziomki.png" width="420">
 </p>
+<p align="center">
+  <img src="https://github.com/trvny/trvny/blob/main/assets/132311.gif" width="69%">
+</p>
+<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=VT323&weight=600&letterSpacing=-95%25&duration=1234&pause=100&color=D718CE&center=true&random=true&width=500&height=150&lines=Co%C5%9B+si%C4%99+popsu%C5%82o+i+nie+by%C5%82o+mnie+s%C5%82ycha%C4%87;KURDE;2137" alt="Typing-SVG" /></a>
 
 ---
 
-## 🔀 Open pull requests
+##
+
+### 🔀 Open pull requests
 
 <!--OPEN_PRS:START-->
 | Repository | PR | Title | Author | State | Updated |
