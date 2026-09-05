@@ -32,7 +32,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Checkout control repository
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
