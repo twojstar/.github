@@ -1,51 +1,47 @@
 ---
 title: "Build and Run LlmBench on Android"
-description: "Learn how to open the LlmBench project in Android Studio, set up the Kotlin Multiplatform environment, and build the Android target with Gradle."
+description: "Open the LlmBench Kotlin Multiplatform project in Android Studio and build its Android app with the repository's current Java and SDK requirements."
 sidebarTitle: "Quickstart"
 ---
 
-To get started with LlmBench, you need Android Studio with Kotlin Multiplatform support. The Android target uses API 35 with a minimum SDK of 26. This guide walks you through opening the project and building it.
+LlmBench is a Kotlin Multiplatform workspace with Android as the first shipping client. The Android app has `minSdk 26`, `targetSdk 35`, and currently compiles against API 37 with Java 21.
 
 <Steps>
   <Step title="Clone the repository">
-    Open a terminal and clone the LlmBench repository:
-
     ```bash
     git clone https://github.com/twojstar/llmbench.git
     cd llmbench
     ```
   </Step>
   <Step title="Open in Android Studio">
-    Launch Android Studio and select **Open** from the welcome screen. Navigate to the cloned `llmbench` directory and open it. Android Studio should recognize the Kotlin Multiplatform project structure.
+    Open the repository root in a current Android Studio release and let Gradle import the `:app` and `:shared` modules.
   </Step>
   <Step title="Sync Gradle">
-    Once the project opens, Android Studio will prompt you to sync Gradle. Click **Sync Now** and wait for the sync to complete. This downloads dependencies and configures the KMP modules.
+    Install Android SDK Platform 37 if Android Studio asks for the compile SDK, then sync the project with JDK 21 selected for Gradle.
   </Step>
-  <Step title="Build the Android target">
-    Select the **Android** target from the run configuration dropdown. Build the project with:
-
+  <Step title="Build the Android app">
     ```bash
-    ./gradlew :androidApp:assembleDebug
+    ./gradlew :app:assembleDebug
     ```
 
-    Or use the **Build** menu in Android Studio.
+    On Windows PowerShell or Command Prompt, use `gradlew.bat :app:assembleDebug`.
   </Step>
   <Step title="Run on a device or emulator">
-    Connect an Android device running API 26 or higher, or start an emulator with API 35. Click **Run** to deploy the LlmBench app.
+    Connect a device running Android 8.0 / API 26 or newer, or start a compatible emulator, then run the `app` configuration from Android Studio.
   </Step>
 </Steps>
 
 <Note>
-  The UI is built with Jetpack Compose and remains Compose-first. Shared UI moves into Compose Multiplatform only where it does not weaken native WebView, upload, authentication, or secure-storage behavior.
+  The UI remains Compose-first. Shared code lives in the Kotlin Multiplatform `shared` module, while Android keeps platform-native WebView, upload, authentication, and secure-storage behavior where needed.
 </Note>
 
 ## Prerequisites
 
-- Android Studio (latest stable)
-- JDK 17 or higher
-- Android SDK with API 35 installed
-- Kotlin Multiplatform Mobile plugin (if not bundled)
+- A current stable Android Studio
+- JDK 21
+- Android SDK Platform 37
+- An Android device or emulator on API 26 or newer
 
 ## Verify your build
 
-After a successful build, you should see the LlmBench app install on your device or emulator. The main screen shows provider tabs and the chat comparison surface.
+A successful debug build creates the APK under the `app` module's build outputs. Running it should open LlmBench with its account-backed provider tabs and native chat/compare surfaces.
