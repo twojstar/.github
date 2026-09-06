@@ -68,6 +68,7 @@ wambridge "D:\Music\track.opus" --device M5 --max-start-volume 3
 - The stream uses HTTP/1.0 without chunked transfer for compatibility with old firmware.
 - The URL contains a random session token and exists only for the duration of the command.
 - `SetUrlPlayback` may freeze certain firmware revisions if the stream body is not recognized as audio. WAM Bridge exposes only FFmpeg output and returns `404` for all other paths.
+- Use WAM Bridge only on a trusted LAN. The local stream is plain HTTP and its random session token is carried in the URL; the token prevents accidental reuse but is not an access-control boundary against a malicious device that can observe local network traffic.
 - Do not expose the bridge HTTP port or port `55001` to the internet.
 
 ## Latency

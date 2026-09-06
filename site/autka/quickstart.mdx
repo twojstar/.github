@@ -55,7 +55,7 @@ Get Autka running on your Android device or emulator in minutes. You need JDK 17
     npm run dev
     ```
 
-    The Android debug build points at `http://10.0.2.2:8787/` (the emulator loopback to your host machine running `wrangler dev`).
+    The Android debug build points at `http://10.0.2.2:8787/`, which is the Android emulator alias for the host running `wrangler dev`. A physical device cannot use `10.0.2.2`; for device testing, point the local debug backend URL at the development machine's LAN address (for example `http://192.168.1.20:8787/`) and ensure the Worker is listening on an interface reachable from the phone.
   </Step>
 </Steps>
 
