@@ -1,0 +1,38 @@
+---
+title: "LlmBench: Multiplatform AI Client Workspace"
+description: "LlmBench is a Kotlin Multiplatform workspace for account-backed AI WebViews, native provider chats, comparison workflows, and reusable prompt tooling."
+sidebarTitle: "Introduction"
+---
+
+LlmBench lets you use multiple AI services from one client without installing a separate app for every provider. Android is the first client; portable provider, model, profile, and prompt logic lives in the Kotlin Multiplatform shared core for future desktop and iOS reuse.
+
+## What LlmBench provides
+
+<CardGroup>
+  <Card title="Web accounts" icon="globe">
+    Persistent provider-scoped WebViews for account-backed services, with bounded memory handling, uploads, mobile tweaks, and privacy-safe activity diagnostics.
+  </Card>
+
+  <Card title="Native and free providers" icon="server">
+    A native chat and comparison surface for direct Gemini, OpenAI, and Claude transports plus OpenRouter Free and AIHubMix gateway adapters.
+  </Card>
+
+  <Card title="Optional AI tooling" icon="bot">
+    Reusable profiles, instructions, prompt tooling, YAML editing, and a small skills/docs browser without vendoring a second copy of the portable `.ai` configuration core.
+  </Card>
+</CardGroup>
+
+The Android prototype also integrates with the system share sheet for text, images, and application files.
+## Provider coverage
+
+The account-backed WebView layer currently includes ChatGPT, Claude, Gemini, DeepSeek, Kimi, Mistral Vibe, Qwen, Microsoft Copilot, Z.ai, Grok, Character.AI, Venice, and Meta AI. Some newer providers remain partial until embedded sign-in, upload flows, and activity probes are verified.
+
+The native layer keeps provider-specific transport behind adapters. OpenRouter Free and AIHubMix are gateway options and stay outside the default All Models comparison to avoid duplicate aggregator routing.
+
+## Project status and license
+
+LlmBench remains an early prototype and is released under the **ISC license**. Android is the current focus; desktop and iOS clients are planned to reuse the shared KMP core where platform-native WebView, upload, authentication, and secure-storage behavior should remain native.
+
+<Note>
+  For the freshest implementation status, use the provider matrix and roadmap in these docs together with the repository's default branch.
+</Note>

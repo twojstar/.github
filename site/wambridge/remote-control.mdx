@@ -1,0 +1,79 @@
+---
+title: "Remote Control Commands for Samsung WAM Speakers"
+sidebarTitle: "Remote Control"
+description: "Control volume, playback state, and standby on your Samsung WAM speaker from the WAM Bridge CLI. Includes volume latency notes and hardware volume routing."
+---
+
+WAM Bridge lets you control a Samsung WAM speaker from the command line without starting a new playback session. Status queries, volume changes, mute, pause, play, stop, and standby all go through Samsung's port `55001` command API, which responds in about one second.
+
+## Status and volume
+
+```powershell
+# Print current speaker status
+wambridge --device M5 --status
+
+# Set volume (raw step 0..30)
+wambridge --device M5 --set-volume 3
+
+# Mute and unmute
+wambridge --device M5 --mute
+wambridge --device M5 --unmute
+```
+
+The Shape M5 uses raw API volume steps `0` to `30`. There is no model-aware percentage conversion yet. Step `3` is approximately 10%; step `30` is maximum.
+
+## Playback control
+
+```powershell
+wambridge --device M5 --pause
+wambridge --device M5 --play
+wambridge --device M5 --stop
+wambridge --device M5 --standby
+```
+
+### Playback type caveats
+
+Control behavior depends on the active playback source:
+
+| Source type | Pause/resume | Notes |
+| --- | --- | --- |
+| WAM Bridge URL stream | Pause carries PCM pipeline latency | Stop and skip also carry latency |
+| Native TuneIn | CPM commands via port `55001` | Fast response |
+| DLNA / Share | UIC pause and resume | Protocol-proven but not actively integrated |
+
+<Warning>
+  Samsung URL playback (WAM Bridge streams) cannot be reliably resumed after a stop. If you stop a WAM Bridge stream, start a new playback session rather than using `--play`.
+</Warning>
+
+## Hardware volume routing
+
+The CLI `--set-volume` command already targets the speaker directly. The `hardware_volume` setting controls the **foobar2000 volume slider** during WAM Bridge PCM playback.
+
+With the default `hardware_volume=0`, slider changes stay in the PCM pipeline and therefore follow its latency. Set `hardware_volume=1` to route the foobar slider to the speaker's port `55001` control path instead:
+
+```ini
+[wambridge]
+hardware_volume=1
+```
+
+On the tested M5 that direct speaker path answers in about one second. Pause, stop, and skip still carry PCM pipeline latency; `hardware_volume=1` only changes volume routing.
+
+## Foobar2000 WAM controls
+
+The installed foobar2000 component adds these menu items under `Playback > WAM Bridge`:
+
+```text
+Playback -> WAM Bridge -> Emergency stop
+Playback -> WAM Bridge -> Stop & mute
+Playback -> WAM Bridge -> Start sleep timer
+Playback -> WAM Bridge -> Cancel sleep timer
+Playback -> WAM Bridge -> Volume up
+Playback -> WAM Bridge -> Volume down
+Playback -> WAM Bridge -> Volume to safe level
+```
+
+All commands run through a serialized control helper and report completion or errors in the foobar console. `Start sleep timer` uses the `sleep_after_stop` preference as its delay; during active playback it routes through the running PCM helper rather than opening a second control connection.
+
+<Tip>
+  For responsive volume control during active WAM Bridge streaming, prefer `hardware_volume=1`. For pause, stop, and skip latency, the work-in-progress improvement is on the speaker's port `55001` command path rather than further shortening the audio pipeline.
+</Tip>

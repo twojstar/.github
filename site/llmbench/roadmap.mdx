@@ -1,0 +1,69 @@
+---
+title: "LlmBench Roadmap and Development Plans"
+description: "See what LlmBench has already shipped and the current next steps for provider verification, prompt tooling, UX, widgets, and security."
+sidebarTitle: "Roadmap"
+---
+
+LlmBench is an early prototype evolving quickly. This page follows the released state on the repository's default branch rather than older design plans.
+
+## Completed
+
+<CardGroup>
+  <Card title="WebView runtime" icon="check">
+    Hardened provider WebViews, added a small LRU pool, pauses inactive views, and evicts them under memory pressure while provider-owned session state persists.
+  </Card>
+
+  <Card title="KMP shared core" icon="check">
+    Moved portable provider, model, profile, and prompt logic into the Kotlin Multiplatform `shared` module.
+  </Card>
+
+  <Card title="Uploads and sharing" icon="check">
+    Added provider file uploads through Android's file picker plus share-sheet routing for text, images, and application files.
+  </Card>
+
+  <Card title="Native provider gateways" icon="check">
+    Added direct Gemini, OpenAI, and Claude transports plus OpenRouter Free and AIHubMix gateway adapters.
+  </Card>
+  <Card title="Provider integration layer" icon="check">
+    Added provider-scoped tweaks/userscripts, privacy-safe diagnostics, and generating/unread tracking for the first supported web providers.
+  </Card>
+
+  <Card title="Provider compatibility docs" icon="check">
+    Documented full and partial WebView support, including cases where embedded sign-in or uploads still require verification.
+  </Card>
+
+  <Card title="CI and repository cleanup" icon="check">
+    Normalized the app identity, removed generated/build-machine files, and added build/lint checks.
+  </Card>
+</CardGroup>
+
+## Planned
+
+<Steps>
+  <Step title="Verify newer WebView providers">
+    Finish embedded sign-in, upload-flow, and activity-probe verification for Qwen, Microsoft Copilot, Z.ai, Grok, Character.AI, Venice, and Meta AI.
+  </Step>
+  <Step title="Prompt and skill workflows">
+    Add a local Markdown prompt vault plus editable/importable `SKILL.md` assets with safe capability gating.
+  </Step>
+  <Step title="First-party document and code tools">
+    Bring selected Docbench and Codebench validation, repair, tokenizer, and hidden-text inspection features into compatible prompt/file workflows.
+  </Step>
+  <Step title="Modernize chat and navigation UX">
+    Continue Material 3 Adaptive and Compose performance work, including large-screen list-detail layouts.
+  </Step>
+  <Step title="Widgets and notification replies">
+    Add provider-aware chat/message widgets and notification replies where the transport can safely send in the background.
+  </Step>
+  <Step title="Security and privacy release gates">
+    Keep sensitive storage, backup rules, WebView isolation, tool permissions, redacted previews, safe exports, and regression tests as cross-cutting release requirements.
+  </Step>
+</Steps>
+
+## How to contribute
+
+Useful contributions include provider verification, shared KMP improvements, adapter maintenance, prompt/skill tooling, security testing, and measured UI performance work.
+
+<Tip>
+  Check the repository's issue tracker and pull requests for the freshest implementation work before starting a larger change.
+</Tip>
