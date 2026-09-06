@@ -40,6 +40,13 @@
   "navigation": {
     "tabs": [
       {
+        "tab": "Home",
+        "icon": "house",
+        "pages": [
+          "index"
+        ]
+      },
+      {
         "tab": "Autka",
         "icon": "car",
         "groups": [
