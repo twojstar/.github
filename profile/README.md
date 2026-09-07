@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/twojstar/.github/main/assets/322703530.webp" alt="twójstar" width="256">
+<img src="assets/file_0000000010c481f4b47204eea8b9d16e.png" alt="twójstar" width="256">
 
 # twójstar
 ## TWÓJ STARY INCORPORATED™
