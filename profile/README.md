@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/twojstar/.github/main/assets/file_0000000010c481f4b47204eea8b9d16e.png" alt="twójstar" width="256">
 
-# twójstar
+# twojstar
 ## TWÓJ STARY INCORPORATED™
 
 **Open source under one roof: apps, feeds, media, automation, and small machines that somehow became infrastructure.**
@@ -25,7 +25,6 @@
 
 | project | home | what lives there |
 | --- | --- | --- |
-| 🏢 **Organization defaults** | [`.github`](https://github.com/twojstar/.github) | profile, community files, profile sync and organization plumbing |
 | 🚗 **Autka** | [`twojstar/Autka`](https://github.com/twojstar/Autka) | Android/KMP car-listing aggregator and backend |
 | 🤖 **LlmBench** | [`twojstar/llmbench`](https://github.com/twojstar/llmbench) | Android workspace for account-backed and free-provider LLM access |
 | 🐤 **Kanarek** | [`twojstar/kanarek`](https://github.com/twojstar/kanarek) | RSS/Atom reader, widgets, radio/IPTV and Worker backend |
@@ -45,9 +44,9 @@
   <img src="https://github.com/trvny/trvny/blob/main/assets/ziomki.png" width="420">
 </p>
 <p align="center">
-  <img src="https://github.com/trvny/trvny/blob/main/assets/132311.gif" width="69%">
+  <img src="https://github.com/trvny/trvny/blob/main/assets/132311.gif" width="100%">
 </p>
-<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=VT323&weight=600&letterSpacing=-95%25&duration=1234&pause=100&color=D718CE&center=true&random=true&width=500&height=150&lines=Co%C5%9B+si%C4%99+popsu%C5%82o+i+nie+by%C5%82o+mnie+s%C5%82ycha%C4%87;KURDE;2137" alt="Typing-SVG" /></a>
+<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=VT323&weight=600&letterSpacing=-95%25&duration=1234&pause=100&color=D718CE&center=true&random=true&width=500&height=150&lines=Co%C5%9B+si%C4%99+popsu%C5%82o+i+nie+by%C5%82o+mnie+s%C5%82ycha%C4%87;KURDE;2137;twojstarytotwojstary" alt="Typing-SVG" /></a>
 
 ---
 
