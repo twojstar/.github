@@ -41,7 +41,7 @@
 ### Ja i moje ziomki
 
 <p align="left">
-  <img src="https://github.com/trvny/trvny/blob/main/assets/ziomki.png" width="420">
+  <img src="../assets/ziomki2.png" width="420">
 </p>
 <p align="center">
   <img src="https://github.com/trvny/trvny/blob/main/assets/132311.gif" width="100%">
