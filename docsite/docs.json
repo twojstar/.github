@@ -2,6 +2,7 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "luma",
   "name": "twojstar",
+  "description": "Documentation hub for twojstar and trvny projects: Android apps, feeds, media tools, Windows utilities, and shared workshop projects.",
   "colors": {
     "primary": "#6366f1",
     "light": "#818cf8",
