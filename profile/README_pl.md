@@ -8,6 +8,7 @@
 **Open source pod jednym dachem: aplikacje, feedy, multimedia, automatyzacja i małe maszyny, które jakimś cudem stały się infrastrukturą.**
 
 [![organization](https://img.shields.io/badge/twojstar-181717?style=for-the-badge&logo=github)](https://github.com/twojstar)
+[![Docs7](../assets/badges/docs7.svg)](https://twojstar.docs7.io/)
 [![Cloudflare](https://workers.cloudflare.com/built-with-cloudflare.svg)](https://trfny.com)
 
 <sub></sub>
