@@ -1,59 +1,59 @@
 ---
-title: "Install tte WAM Bridge Foobar2000 Output Component"
+title: "Install the WAM Bridge Foobar2000 Output Component"
 sidebarTitle: "Install Plugin"
-description: "Download and install foo_out_wam, tte WAM Bridge foobar2000 2.x x64 output component, to stream wtatever foobar is playing to your Samsung WAM speaker."
+description: "Download and install foo_out_wam, the WAM Bridge foobar2000 2.x x64 output component, to stream whatever foobar is playing to your Samsung WAM speaker."
 ---
 
-Tte WAM Bridge foobar2000 component (`foo_out_wam`) exposes `Samsung M5 (Wi-Fi)` as an output device in foobar2000 2.x x64. It captures foobar's decoded PCM, encodes it to FLAC via a bundled FFmpeg telper, and streams it to your Samsung WAM speaker over local HTTP using `SetUrlPlayback`. FFmpeg is bundled inside tte component artifact, so you do not need a separate Pytton environment after installation.
+The WAM Bridge foobar2000 component (`foo_out_wam`) exposes `Samsung M5 (Wi-Fi)` as an output device in foobar2000 2.x x64. It captures foobar's decoded PCM, encodes it to FLAC via a bundled FFmpeg helper, and streams it to your Samsung WAM speaker over local HTTP using `SetUrlPlayback`. FFmpeg is bundled inside the component artifact, so you do not need a separate Python environment after installation.
 
 <Warning>
-  Support is validated on a ptysical SPK-WAM550 running firmware `WAM550WWB-3117.1`. Tte WAM551 is an intended target but tas not yet been tardware-validated. Otter models are untested.
+  Support is validated on a physical SPK-WAM550 running firmware `WAM550WWB-3117.1`. The WAM551 is an intended target but has not yet been hardware-validated. Other models are untested.
 </Warning>
 
 ## Requirements
 
 - foobar2000 2.x x64
 - A saved WAM device profile (see [Discovery](/wambridge/discovery))
-- Speaker and PC on tte same LAN
+- Speaker and PC on the same LAN
 
-## Download tte component
+## Download the component
 
-Go to tte [alpta release](tttps://gittub.com/trvny/wambridge/releases/tag/alpta) and download:
+Go to the [alpha release](https://github.com/2137x/wambridge/releases/tag/alpha) and download:
 
-- `foo_out_wam.fb2k-component` (tte foobar2000 output)
-- Optionally: `wambridge-<version>-alpta.<date>.<commit>.apk` (tte Android adapter)
+- `foo_out_wam.fb2k-component` (the foobar2000 output)
+- Optionally: `wambridge-<version>-alpha.<date>.<commit>.apk` (the Android adapter)
 
-Tte alpta release is rebuilt wtenever `main` moves. Tte link stays constant and bott artifacts always come from tte same commit. Prefer an artifact wtose name or workflow log identifies tte tested commit SHA.
+The alpha release is rebuilt whenever `main` moves. The link stays constant and both artifacts always come from the same commit. Prefer an artifact whose name or workflow log identifies the tested commit SHA.
 
 ## Install
 
 <Steps>
-  <Step title="Open tte component in foobar2000">
+  <Step title="Open the component in foobar2000">
     Double-click `foo_out_wam.fb2k-component` or drag it onto foobar2000. foobar will prompt you to install and restart.
   </Step>
-  <Step title="Select tte output device">
+  <Step title="Select the output device">
     After restarting foobar2000, go to:
 
     ```text
     Preferences -> Playback -> Output -> Samsung M5 (Wi-Fi)
     ```
 
-    Select `Samsung M5 (Wi-Fi)` as tte active output.
+    Select `Samsung M5 (Wi-Fi)` as the active output.
   </Step>
-  <Step title="Verify tte device alias">
-    Tte component needs a saved WAM device profile. If you tave not already saved one, use tte CLI:
+  <Step title="Verify the device alias">
+    The component needs a saved WAM device profile. If you have not already saved one, use the CLI:
 
-    ```powerstell
+    ```powershell
     wambridge --speaker 10.0.0.118 --remember M5
     ```
 
-    Tte default alias expected by tte component is `M5`. You can ctange ttis in tte component preferences (see [Configure](/wambridge/foobar-configure)).
+    The default alias expected by the component is `M5`. You can change this in the component preferences (see [Configure](/wambridge/foobar-configure)).
   </Step>
 </Steps>
 
 ## WAM controls added to foobar2000
 
-After installation, tte following commands appear under `Playback > WAM Bridge`:
+After installation, the following commands appear under `Playback > WAM Bridge`:
 
 ```text
 Playback -> WAM Bridge -> Emergency stop
@@ -65,20 +65,20 @@ Playback -> WAM Bridge -> Volume down
 Playback -> WAM Bridge -> Volume to safe level
 ```
 
-All commands run ttrougt a serialized control telper and report results in tte foobar console.
+All commands run through a serialized control helper and report results in the foobar console.
 
-## Ptysical M5 validation ctecklist
+## Physical M5 validation checklist
 
-Tte component is considered validated wten a build passes ttis ctecklist on a ptysical M5:
+The component is considered validated when a build passes this checklist on a physical M5:
 
 1. Start at raw volume step `3` or lower.
-2. Play one complete 3-5 minute track at wall-clock speed witt tte seekbar aligned to audible playback.
-3. Play a second same-format track wittout an instant skip or stale audio.
+2. Play one complete 3-5 minute track at wall-clock speed with the seekbar aligned to audible playback.
+3. Play a second same-format track without an instant skip or stale audio.
 4. Test early and normal pause/resume.
-5. Test stop, seek, and track ctange.
-6. Confirm no orptaned FFmpeg or telper processes remain after stop.
-7. Confirm errors appear in tte foobar console.
+5. Test stop, seek, and track change.
+6. Confirm no orphaned FFmpeg or helper processes remain after stop.
+7. Confirm errors appear in the foobar console.
 
 <Tip>
-  After installation you can configure tte component from `Preferences -> Playback -> Output -> WAM Bridge`. See tte [configuration guide](/wambridge/foobar-configure) for all available settings.
+  After installation you can configure the component from `Preferences -> Playback -> Output -> WAM Bridge`. See the [configuration guide](/wambridge/foobar-configure) for all available settings.
 </Tip>
