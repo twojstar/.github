@@ -6,7 +6,7 @@ const { execFileSync, spawnSync } = require('node:child_process');
 
 const API = 'https://api.github.com';
 const API_VERSION = '2022-11-28';
-const USER_AGENT = 'twojstar-github-backup';
+const USER_AGENT = '2137x-github-backup';
 const MAX_ATTEMPTS = 5;
 const RETRY_BUDGET_MS = 20 * 60_000;
 

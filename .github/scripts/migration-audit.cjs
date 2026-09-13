@@ -12,7 +12,7 @@ const token = process.env.AUDIT_GH_TOKEN || (!ciCrossRepo ? (process.env.GH_TOKE
 const headers = {
   Accept: 'application/vnd.github+json',
   'X-GitHub-Api-Version': '2022-11-28',
-  'User-Agent': 'twojstar-migration-audit',
+  'User-Agent': '2137x-migration-audit',
 };
 if (token) headers.Authorization = `Bearer ${token}`;
 

@@ -1,6 +1,6 @@
 # Repository migration helper
 
-Use **Migration Audit** after moving a public repository from `trvny/*` to `twojstar/*`.
+Use **Migration Audit** after moving a public repository from `trvny/*` to `2137x/*`.
 
 The workflow checks:
 
@@ -15,7 +15,7 @@ For a deeper local audit with the currently authenticated GitHub account:
 
 ```powershell
 $env:GH_TOKEN = gh auth token
-$env:TARGET_REPO = 'twojstar/wambridge'
+$env:TARGET_REPO = '2137x/wambridge'
 $env:LEGACY_OWNER = 'trvny'
 node .github/scripts/migration-audit.cjs
 ```
