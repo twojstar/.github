@@ -62,14 +62,14 @@ jobs:
           permission-issues: read
           permission-pull-requests: read
 
-      - name: Create twojstar read token
+      - name: Create 2137x read token
         if: steps.auth.outputs.configured == 'true'
-        id: twojstar-token
+        id: org-token
         uses: actions/create-github-app-token@v3
         with:
           client-id: ${{ vars.GPTOMEK_APP_CLIENT_ID }}
           private-key: ${{ secrets.GPTOMEK_APP_PRIVATE_KEY }}
-          owner: twojstar
+          owner: 2137x
           permission-contents: read
           permission-issues: read
           permission-pull-requests: read
@@ -94,7 +94,7 @@ jobs:
         shell: bash
         env:
           TRVNY_TOKEN: ${{ steps.trvny-token.outputs.token }}
-          TWOJSTAR_TOKEN: ${{ steps.twojstar-token.outputs.token }}
+          ORG_TOKEN: ${{ steps.org-token.outputs.token }}
           PUBLIC_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -102,11 +102,11 @@ jobs:
           mkdir -p backup/github work
           repos_file="$(mktemp)"
 
-          if [[ -n "$TRVNY_TOKEN" && -n "$TWOJSTAR_TOKEN" ]]; then
+          if [[ -n "$TRVNY_TOKEN" && -n "$ORG_TOKEN" ]]; then
             auth_mode="gptomek-app"
             GH_TOKEN="$TRVNY_TOKEN" gh api --paginate installation/repositories \
               --jq '.repositories[].full_name' >> "$repos_file"
-            GH_TOKEN="$TWOJSTAR_TOKEN" gh api --paginate installation/repositories \
+            GH_TOKEN="$ORG_TOKEN" gh api --paginate installation/repositories \
               --jq '.repositories[].full_name' >> "$repos_file"
           else
             auth_mode="public-fallback"
@@ -114,7 +114,7 @@ jobs:
               'users/trvny/repos?type=owner&per_page=100' \
               --jq '.[] | select(.visibility == "public") | .full_name' >> "$repos_file"
             GH_TOKEN="$PUBLIC_TOKEN" gh api --paginate \
-              'orgs/twojstar/repos?type=public&per_page=100' \
+              'orgs/2137x/repos?type=public&per_page=100' \
               --jq '.[].full_name' >> "$repos_file"
           fi
           sort -u -o "$repos_file" "$repos_file"
@@ -130,7 +130,7 @@ jobs:
 
             case "$owner" in
               trvny) token="$TRVNY_TOKEN" ;;
-              twojstar) token="$TWOJSTAR_TOKEN" ;;
+              2137x) token="$ORG_TOKEN" ;;
               *) continue ;;
             esac
 

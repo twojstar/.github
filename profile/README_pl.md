@@ -1,13 +1,13 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/twojstar/.github/main/assets/file_0000000010c481f4b47204eea8b9d16e.png" alt="twójstar" width="256">
+<img src="https://raw.githubusercontent.com/2137x/.github/main/assets/file_0000000010c481f4b47204eea8b9d16e.png" alt="twójstar" width="256">
 
 # twójstar
 ## TWÓJ STARY INCORPORATED™
 
 **Open source pod jednym dachem: aplikacje, feedy, multimedia, automatyzacja i małe maszyny, które jakimś cudem stały się infrastrukturą.**
 
-[![organization](https://img.shields.io/badge/twojstar-181717?style=for-the-badge&logo=github)](https://github.com/twojstar)
+[![organization](https://img.shields.io/badge/2137x-181717?style=for-the-badge&logo=github)](https://github.com/2137x)
 [![Docs7](../assets/badges/docs7.svg)](https://twojstar.docs7.io/)
 [![Cloudflare](https://workers.cloudflare.com/built-with-cloudflare.svg)](https://trfny.com)
 
@@ -16,7 +16,7 @@
 **Polski** · [English](README.md) · [简体中文](README_zh.md)
 
 [![feedseek](https://img.shields.io/badge/feed-seek-ff7a18?style=for-the-badge&logo=rss&logoColor=white)](https://trvny.github.io/feedseek) [![tvpi](https://img.shields.io/badge/tvpi-IPTV-2563eb?style=for-the-badge&logo=jellyfin&logoColor=white)](https://trfny.com/tv/)
-[![wambridge](https://img.shields.io/badge/wambridge-Samsung_M5-1428a0?style=for-the-badge&logo=samsung&logoColor=white)](https://github.com/twojstar/wambridge)
+[![wambridge](https://img.shields.io/badge/wambridge-Samsung_M5-1428a0?style=for-the-badge&logo=samsung&logoColor=white)](https://github.com/2137x/wambridge)
 [![weather](https://img.shields.io/badge/weather-KOŚCIELEC-16a34a?style=for-the-badge&logo=cloudflareworkers&logoColor=white)](https://weather.trfny.com)  
 [![codebench](https://img.shields.io/badge/codebench-barcodes-111827?style=for-the-badge&logo=qrcode&logoColor=white)](https://codebench.trfny.com) [![streambench](https://img.shields.io/badge/streambench-media-7c3aed?style=for-the-badge&logo=vlcmediaplayer&logoColor=white)](https://streambench.trfny.com) [![docbench](https://img.shields.io/badge/docbench-docs_%26_PDF-b45309?style=for-the-badge&logo=googledocs&logoColor=white)](https://docbench.travny.workers.dev)
 
@@ -26,14 +26,14 @@
 
 | projekt | dom | co tam mieszka |
 | --- | --- | --- |
-| 🏢 **Ustawienia organizacji** | [`.github`](https://github.com/twojstar/.github) | profil, pliki społeczności, synchronizacja profilu i organizacyjna hydraulika |
-| 🚗 **Autka** | [`twojstar/Autka`](https://github.com/twojstar/Autka) | agregator ogłoszeń samochodowych Android/KMP i backend |
-| 🤖 **LlmBench** | [`twojstar/llmbench`](https://github.com/twojstar/llmbench) | środowisko Android do dostępu do LLM-ów przez konta i darmowych providerów |
-| 🐤 **Kanarek** | [`twojstar/kanarek`](https://github.com/twojstar/kanarek) | czytnik RSS/Atom, widgety, radio/IPTV i backend Workera |
+| 🏢 **Ustawienia organizacji** | [`.github`](https://github.com/2137x/.github) | profil, pliki społeczności, synchronizacja profilu i organizacyjna hydraulika |
+| 🚗 **Autka** | [`2137x/Autka`](https://github.com/2137x/Autka) | agregator ogłoszeń samochodowych Android/KMP i backend |
+| 🤖 **LlmBench** | [`2137x/llmbench`](https://github.com/2137x/llmbench) | środowisko Android do dostępu do LLM-ów przez konta i darmowych providerów |
+| 🐤 **Kanarek** | [`2137x/kanarek`](https://github.com/2137x/kanarek) | czytnik RSS/Atom, widgety, radio/IPTV i backend Workera |
 | 📡 **Feedseek** | [`trvny/feedseek`](https://github.com/trvny/feedseek) | wykrywanie, naprawianie i generowanie feedów |
 | 📺 **TVPI** | [`trvny/tvpi`](https://github.com/trvny/tvpi) | narzędzia IPTV, webowe punkty wejścia i kawałki Workera |
-| 🔊 **WAM Bridge** | [`twojstar/wambridge`](https://github.com/twojstar/wambridge) | most dla Samsung Wireless Audio Multiroom i wyjście foobar2000 |
-| 🧰 **Warsztat** | [`twojstar/twojstar`](https://github.com/twojstar/twojstar) | Benche, Weather Feed, Feedboard, Xiaomi ADB Tools, Paint.NET ICO i wspólne rolling release’y |
+| 🔊 **WAM Bridge** | [`2137x/wambridge`](https://github.com/2137x/wambridge) | most dla Samsung Wireless Audio Multiroom i wyjście foobar2000 |
+| 🧰 **Warsztat** | [`2137x/twojstar`](https://github.com/2137x/twojstar) | Benche, Weather Feed, Feedboard, Xiaomi ADB Tools, Paint.NET ICO i wspólne rolling release’y |
 | 🧪 **Lab infrastruktury** | [`trvny/trvny`](https://github.com/trvny/trvny) | GitHub Apps, usługi MCP, eksperymenty, automatyzacja i szafka, w której mieszkają kable |
 
 <div align="center">
@@ -59,7 +59,7 @@
 <!--OPEN_PRS:START-->
 | Repozytorium | PR | Tytuł | Autor | Stan | Aktualizacja |
 | --- | ---: | --- | --- | --- | --- |
-| twojstar/llmbench | [#158](https://github.com/twojstar/llmbench/pull/158) | Expose Docbench document preflight UI | @trvny | gotowy | 2026-09-11 |
+| 2137x/llmbench | [#158](https://github.com/2137x/llmbench/pull/158) | Expose Docbench document preflight UI | @trvny | gotowy | 2026-09-11 |
 <!--OPEN_PRS:END-->
 
 ### 💬 Cytat z szuflady

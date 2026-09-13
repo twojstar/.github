@@ -1,13 +1,13 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/twojstar/.github/main/assets/file_0000000010c481f4b47204eea8b9d16e.png" alt="twójstar" width="256">
+<img src="https://raw.githubusercontent.com/2137x/.github/main/assets/file_0000000010c481f4b47204eea8b9d16e.png" alt="twójstar" width="256">
 
 # twojstar
 ## TWÓJ STARY INCORPORATED™
 
 **Open source under one roof: apps, feeds, media, automation, and small machines that somehow became infrastructure.**
 
-[![organization](https://img.shields.io/badge/twojstar-181717?style=for-the-badge&logo=github)](https://github.com/twojstar)
+[![organization](https://img.shields.io/badge/2137x-181717?style=for-the-badge&logo=github)](https://github.com/2137x)
 [![Docs7](../assets/badges/docs7.svg)](https://twojstar.docs7.io/)
 [![Cloudflare](https://workers.cloudflare.com/built-with-cloudflare.svg)](https://trfny.com)
 
@@ -16,7 +16,7 @@
 [Polski](README_pl.md) · **English** · [简体中文](README_zh.md)
 
 [![feedseek](https://img.shields.io/badge/feed-seek-ff7a18?style=for-the-badge&logo=rss&logoColor=white)](https://trvny.github.io/feedseek) [![tvpi](https://img.shields.io/badge/tvpi-IPTV-2563eb?style=for-the-badge&logo=jellyfin&logoColor=white)](https://trfny.com/tv/)
-[![wambridge](https://img.shields.io/badge/wambridge-Samsung_M5-1428a0?style=for-the-badge&logo=samsung&logoColor=white)](https://github.com/twojstar/wambridge)
+[![wambridge](https://img.shields.io/badge/wambridge-Samsung_M5-1428a0?style=for-the-badge&logo=samsung&logoColor=white)](https://github.com/2137x/wambridge)
 [![weather](https://img.shields.io/badge/weather-KOŚCIELEC-16a34a?style=for-the-badge&logo=cloudflareworkers&logoColor=white)](https://weather.trfny.com)  
 [![codebench](https://img.shields.io/badge/codebench-barcodes-111827?style=for-the-badge&logo=qrcode&logoColor=white)](https://codebench.trfny.com) [![streambench](https://img.shields.io/badge/streambench-media-7c3aed?style=for-the-badge&logo=vlcmediaplayer&logoColor=white)](https://streambench.trfny.com) [![docbench](https://img.shields.io/badge/docbench-docs_%26_PDF-b45309?style=for-the-badge&logo=googledocs&logoColor=white)](https://docbench.travny.workers.dev)
 
@@ -26,13 +26,13 @@
 
 | project | home | what lives there |
 | --- | --- | --- |
-| 🚗 **Autka** | [`twojstar/Autka`](https://github.com/twojstar/Autka) | Android/KMP car-listing aggregator and backend |
-| 🤖 **LlmBench** | [`twojstar/llmbench`](https://github.com/twojstar/llmbench) | Android workspace for account-backed and free-provider LLM access |
-| 🐤 **Kanarek** | [`twojstar/kanarek`](https://github.com/twojstar/kanarek) | RSS/Atom reader, widgets, radio/IPTV and Worker backend |
+| 🚗 **Autka** | [`2137x/Autka`](https://github.com/2137x/Autka) | Android/KMP car-listing aggregator and backend |
+| 🤖 **LlmBench** | [`2137x/llmbench`](https://github.com/2137x/llmbench) | Android workspace for account-backed and free-provider LLM access |
+| 🐤 **Kanarek** | [`2137x/kanarek`](https://github.com/2137x/kanarek) | RSS/Atom reader, widgets, radio/IPTV and Worker backend |
 | 📡 **Feedseek** | [`trvny/feedseek`](https://github.com/trvny/feedseek) | feed discovery, repair and generation |
 | 📺 **TVPI** | [`trvny/tvpi`](https://github.com/trvny/tvpi) | IPTV tooling, web entry points and Worker bits |
-| 🔊 **WAM Bridge** | [`twojstar/wambridge`](https://github.com/twojstar/wambridge) | Samsung Wireless Audio Multiroom bridge and foobar2000 output |
-| 🧰 **Workshop** | [`twojstar/twojstar`](https://github.com/twojstar/twojstar) | Benches, Weather Feed, Feedboard, Xiaomi ADB Tools, Paint.NET ICO and shared rolling releases |
+| 🔊 **WAM Bridge** | [`2137x/wambridge`](https://github.com/2137x/wambridge) | Samsung Wireless Audio Multiroom bridge and foobar2000 output |
+| 🧰 **Workshop** | [`2137x/twojstar`](https://github.com/2137x/twojstar) | Benches, Weather Feed, Feedboard, Xiaomi ADB Tools, Paint.NET ICO and shared rolling releases |
 | 🧪 **Infra lab** | [`trvny/trvny`](https://github.com/trvny/trvny) | GitHub Apps, MCP services, experiments, automation and the cupboard where the cables live |
 
 <div align="center">
@@ -58,7 +58,7 @@
 <!--OPEN_PRS:START-->
 | Repository | PR | Title | Author | State | Updated |
 | --- | ---: | --- | --- | --- | --- |
-| twojstar/llmbench | [#158](https://github.com/twojstar/llmbench/pull/158) | Expose Docbench document preflight UI | @trvny | ready | 2026-09-11 |
+| 2137x/llmbench | [#158](https://github.com/2137x/llmbench/pull/158) | Expose Docbench document preflight UI | @trvny | ready | 2026-09-11 |
 <!--OPEN_PRS:END-->
 
 ### 💬 Quote from the drawer

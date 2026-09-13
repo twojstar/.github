@@ -6,7 +6,7 @@ on:
       repository:
         description: Repository to audit after transfer (owner/name)
         required: true
-        default: twojstar/Autka
+        default: 2137x/Autka
       legacy_owner:
         description: Previous repository owner
         required: true
