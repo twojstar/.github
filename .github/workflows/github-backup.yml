@@ -62,14 +62,14 @@ jobs:
           permission-issues: read
           permission-pull-requests: read
 
-      - name: Create 2137x read token
+      - name: Create enclaro read token
         if: steps.auth.outputs.configured == 'true'
         id: org-token
         uses: actions/create-github-app-token@v3
         with:
           client-id: ${{ vars.GPTOMEK_APP_CLIENT_ID }}
           private-key: ${{ secrets.GPTOMEK_APP_PRIVATE_KEY }}
-          owner: 2137x
+          owner: enclaro
           permission-contents: read
           permission-issues: read
           permission-pull-requests: read
@@ -114,7 +114,7 @@ jobs:
               'users/trvny/repos?type=owner&per_page=100' \
               --jq '.[] | select(.visibility == "public") | .full_name' >> "$repos_file"
             GH_TOKEN="$PUBLIC_TOKEN" gh api --paginate \
-              'orgs/2137x/repos?type=public&per_page=100' \
+              'orgs/enclaro/repos?type=public&per_page=100' \
               --jq '.[].full_name' >> "$repos_file"
           fi
           sort -u -o "$repos_file" "$repos_file"
@@ -130,7 +130,7 @@ jobs:
 
             case "$owner" in
               trvny) token="$TRVNY_TOKEN" ;;
-              2137x) token="$ORG_TOKEN" ;;
+              enclaro) token="$ORG_TOKEN" ;;
               *) continue ;;
             esac
 
